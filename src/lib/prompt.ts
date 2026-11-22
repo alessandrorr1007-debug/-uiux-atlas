@@ -1,28 +1,38 @@
 import type { ComponentInfo, PromptConfig } from '../types'
 
 export function buildPrompt(items: ComponentInfo[], config: PromptConfig): string {
-  const project = config.project.trim() || 'mi aplicación web'
   if (items.length === 0) return ''
-  const descriptions = items.map((item, index) =>
-    `${index + 1}. ${item.name}: ${item.description} ${item.guidance}`
+  const project = config.project.trim() || 'mi aplicación web'
+  const audience = (config.audience || 'usuarios del proyecto').trim()
+  const structure = (config.structure || 'layout adaptable según necesidades del contenido').trim()
+  const hero = (config.hero || 'portada clara con una acción principal').trim()
+  const motion = (config.motion || 'microinteracciones discretas').trim()
+  const device = (config.device || 'Móvil y escritorio').trim()
+  const chosen = items.map((item,index) =>
+    `${index+1}. ${item.name}: ${item.description} ${item.guidance}`
   ).join('\n')
   const safeguard = config.keepLogic
-    ? 'No modifiques autenticación, lógica de negocio, APIs, base de datos, rutas, contratos ni funciones existentes. Limita los cambios a UI/UX salvo correcciones imprescindibles y explícitamente justificadas.'
-    : 'Integra los componentes con la arquitectura existente y explica cualquier cambio funcional.'
-  return `Actúa como diseñador UI/UX senior y desarrollador frontend especializado en ${config.tool}.
+    ? 'No modifiques autenticación, lógica de negocio, APIs, base de datos, rutas, contratos ni funcionalidades existentes. Limita los cambios a la UI/UX salvo correcciones explícitas imprescindibles.'
+    : 'Integra el diseño en la arquitectura existente y justifica cada cambio funcional antes de realizarlo.'
 
-PROYECTO: ${project}.
-OBJETIVO: implementar los siguientes componentes de forma coherente y funcional:
-${descriptions}
+  return `Actúa como diseñador de producto senior y desarrollador frontend trabajando con ${config.tool}.
 
-ESTILO: ${config.style}. TEMA: ${config.theme}.
-REQUISITOS:
-- Diseño responsive, accesible (teclado, foco visible, etiquetas ARIA y contraste) y rápido en móviles modestos.
-- Componentes reutilizables, estados reales (vacío, cargando, error, éxito), navegación y acciones funcionales.
-- Microinteracciones discretas, respetando prefers-reduced-motion.
-- Evita elementos decorativos que no funcionen, datos falsos, dependencias innecesarias y estilos inconsistentes.
+1. QUÉ ES: ${project}.
+2. PARA QUIÉN: ${audience}.
+3. ESTILO: ${config.style}; apariencia: ${config.theme}.
+4. ESTRUCTURA: ${structure}; portada: ${hero}.
+5. DETALLES E INTERACCIÓN: ${motion}; componentes solicitados:
+${chosen}
+6. PANTALLA: ${device}.
+
+CRITERIOS:
+- Jerarquía tipográfica consistente, diseño responsive, componentes reutilizables y contraste WCAG AA.
+- Incluye estados hover, focus, pressed, disabled, vacío, carga, error y confirmación cuando apliquen.
+- Usa etiquetas accesibles y navegación por teclado. Respeta prefers-reduced-motion.
+- No inventes reseñas, imágenes de clientes, estadísticas ni información comercial real.
+- Evita efectos costosos y dependencias innecesarias; optimiza para móviles modestos.
 - ${safeguard}
-- Valida compilación y pruebas, y resume archivos modificados y cómo verificar los resultados.
+- Ejecuta pruebas y compilación y documenta archivos cambiados.
 
-ENTREGA: código implementado y comprobable, no solamente una propuesta visual.`
+ENTREGA: implementación real y verificable, no solo un mockup o una descripción.`
 }

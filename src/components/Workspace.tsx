@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import {
   ArrowRight, Check, CheckCircle2, CircleHelp, Clipboard, Image, Laptop,
-  Layers3, Search, Smartphone, Sparkles, WandSparkles
+  Layers3, Search, Smartphone, Sparkles
 } from 'lucide-react'
 import { components } from '../data/components'
 import { sectors, type SectorPreset } from '../data/sectors'
-import { photoCategories, photoStyles, type PhotoStyle } from '../data/photography'
+import { photoCategories, photoStyles } from '../data/photography'
 import { auditCriteria } from '../data/audit'
 import { loadJSON, saveJSON } from '../lib/storage'
 import { buildPhotoPrompt, buildAuditPrompt, buildSectorPrompt } from '../lib/studio'

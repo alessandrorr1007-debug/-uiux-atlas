@@ -27,4 +27,9 @@ export type PromptConfig = {
   style: string
   theme: 'Claro' | 'Oscuro' | 'Ambos'
   keepLogic: boolean
+  audience?: string
+  structure?: string
+  hero?: string
+  motion?: string
+  device?: string
 }
