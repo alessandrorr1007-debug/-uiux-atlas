@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSPropertie
 import {
   ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronDown, Clipboard,
   Code2, Compass, Copy, Filter, Github, Heart, Layers3, LayoutDashboard, Menu,
-  Moon, Plus, Search, Settings2, SlidersHorizontal, Sparkles, Sun, WandSparkles, X,
+  Moon, Plus, Search, Settings2, SlidersHorizontal, Sparkles, Sun, WandSparkles, BrainCircuit, X,
   type LucideIcon, BarChart3, ClipboardList, ShoppingBag, Bell, LayoutGrid, Type as TypeIcon
 } from 'lucide-react'
 import { categories, type CategoryId, type ComponentInfo, type PromptConfig, type ToolId } from './types'
@@ -16,6 +16,7 @@ import PatternDemo, { hasSpecificDemo } from './components/PatternDemo'
 import type { SectorPreset } from './data/sectors'
 import type { WorkspaceView } from './components/Workspace'
 const Workspace = lazy(() => import('./components/Workspace'))
+const AtlasIA = lazy(() => import('./components/AtlasIA'))
 
 const categoryIcons: Record<string, LucideIcon> = {
   compass: Compass, layout: LayoutGrid, chart: BarChart3, form: ClipboardList,
@@ -54,7 +55,7 @@ function App() {
   const [promptIds, setPromptIds] = useState<string[]>(() => loadJSON('selection', []))
   const [category, setCategory] = useState<CategoryId | 'all'>('all')
   const [family, setFamily] = useState<string>('all')
-  const [workspace, setWorkspace] = useState<'atlas' | WorkspaceView>('atlas')
+  const [workspace, setWorkspace] = useState<'atlas' | WorkspaceView | 'ai'>('atlas')
   const [search, setSearch] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
   const [visibleCount, setVisibleCount] = useState(12)
@@ -143,6 +144,7 @@ function App() {
   const openBuilder = () => { setSelected(null); setBuilderOpen(true); setMobileNavOpen(false) }
   const switchTheme = () => setTheme(current => current === 'dark' ? 'light' : 'dark')
   const openWorkspace = (value: WorkspaceView) => { setWorkspace(value); setMobileNavOpen(false) }
+  const openAtlasAI = () => { setWorkspace('ai'); setMobileNavOpen(false) }
   const useSectorPreset = (preset: SectorPreset) => {
     setPromptIds(preset.components.filter(id => components.some(item => item.id === id)))
     setConfig(previous => ({ ...previous, project: `${preset.kind === 'app' ? 'Aplicación' : 'Sitio web'} de ${preset.name}`, audience: preset.audience, structure: 'Layout adaptable', device: preset.kind === 'app' ? 'Móvil' : 'Móvil y escritorio' }))
@@ -159,6 +161,12 @@ function App() {
           <button key={item.id} className={category === item.id && !onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(false); selectCategory(item.id) }}><CategoryIcon icon={item.icon}/><span>{item.label}</span><em>{components.filter(c => c.category === item.id).length}</em></button>
         ))}
       </nav>
+      <div className="sidebar__section-title space-top">ASISTENTE INTELIGENTE</div>
+      <div className="sidebar__nav">
+        <button className={workspace==='ai'?'sidebar__link active':'sidebar__link'} onClick={openAtlasAI}>
+          <BrainCircuit size={18}/><span>Atlas IA</span><em>IA</em>
+        </button>
+      </div>
       <div className="sidebar__section-title space-top">ATLAS STUDIO</div>
       <div className="sidebar__nav">
         <button className={workspace==='lab'?'sidebar__link active':'sidebar__link'} onClick={()=>openWorkspace('lab')}><Sparkles size={18}/><span>Laboratorio interactivo</span><em>24</em></button>
@@ -171,7 +179,7 @@ function App() {
         <button className={onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(true); selectCategory('all') }}><Heart size={18}/><span>Favoritos</span><em>{favorites.length}</em></button>
         <button className="sidebar__link" onClick={openBuilder}><WandSparkles size={18}/><span>Constructor de prompts</span>{promptIds.length > 0 && <em className="selected-number">{promptIds.length}</em>}</button>
       </div>
-      <div className="sidebar__bottom"><div className="sidebar__tip"><div className="sidebar__tip-icon"><Sparkles size={17}/></div><strong>Diseña con intención.</strong><p>Elige patrones y genera instrucciones precisas para tu IA.</p><button onClick={openBuilder}>Crear prompt <ArrowRight size={14}/></button></div><div className="sidebar__foot">ATLAS STUDIO <span>V 0.3.0</span></div></div>
+      <div className="sidebar__bottom"><div className="sidebar__tip"><div className="sidebar__tip-icon"><Sparkles size={17}/></div><strong>Diseña con intención.</strong><p>Elige patrones y genera instrucciones precisas para tu IA.</p><button onClick={openBuilder}>Crear prompt <ArrowRight size={14}/></button></div><div className="sidebar__foot">ATLAS STUDIO <span>V 0.4.0</span></div></div>
     </>
   )
 
@@ -181,7 +189,7 @@ function App() {
       {mobileNavOpen && <div className="mobile-backdrop" onClick={() => setMobileNavOpen(false)}><aside className="sidebar sidebar--mobile" onClick={event => event.stopPropagation()}><button className="mobile-close icon-button" onClick={() => setMobileNavOpen(false)} aria-label="Cerrar menú"><X size={20}/></button>{sidebar}</aside></div>}
       <main className="main">
         <header className="topbar">
-          <div className="topbar__left"><button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="topbar__location"><span>Workspace</span><span className="location-slash">/</span><strong>{workspace === 'atlas' ? 'Biblioteca de diseño' : ({lab:'Laboratorio',templates:'Plantillas',audit:'Auditoría',photo:'Fotografía'} as Record<WorkspaceView,string>)[workspace]}</strong></span></div>
+          <div className="topbar__left"><button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="topbar__location"><span>Workspace</span><span className="location-slash">/</span><strong>{workspace === 'atlas' ? 'Biblioteca de diseño' : workspace === 'ai' ? 'Atlas IA' : ({lab:'Laboratorio',templates:'Plantillas',audit:'Auditoría',photo:'Fotografía'} as Record<WorkspaceView,string>)[workspace]}</strong></span></div>
           <div className="topbar__right"><button className="icon-button" aria-label="Cambiar tema" title="Alternar tema" onClick={switchTheme}>{theme === 'dark' ? <Sun size={19}/> : <Moon size={19}/>}</button><button className="icon-button" aria-label="Personalizar apariencia" title="Personalizar apariencia" onClick={() => setSettingsOpen(true)}><Settings2 size={19}/></button><a className="icon-button github-button" title="Ver repositorio en GitHub" aria-label="GitHub" href="https://github.com/alessandrorr1007-debug/-uiux-atlas" target="_blank" rel="noreferrer"><Github size={19}/></a><span className="topbar__avatar" aria-label="Atlas">A</span></div>
         </header>
         <div className="page">
@@ -222,8 +230,8 @@ function App() {
               })}</div>{visibleCount < filtered.length && <div className="load-more"><button className="secondary-button" onClick={() => setVisibleCount(n => n + 12)}>Ver más patrones <ChevronDown size={17}/></button><span>Mostrando {visible.length} de {filtered.length}</span></div>}</>
             ) : <div className="empty-state"><div><Search size={27}/></div><h3>No encontramos componentes</h3><p>Prueba con otra palabra o elimina los filtros para ver la biblioteca completa.</p><button className="secondary-button" onClick={() => { setSearch(''); setOnlyFavorites(false); selectCategory('all') }}>Limpiar filtros <ArrowRight size={15}/></button></div>}
           </section>
-          </> : <Suspense fallback={<div className="workspace-loading" role="status">Cargando estudio de diseño…</div>}><Workspace view={workspace} onUsePreset={useSectorPreset} onCopy={copyText}/></Suspense>}
-          <footer className="footer"><span><Layers3 size={16}/> UIUX Atlas · Hecho para crear mejor</span><span>Biblioteca educativa · v0.3.0</span></footer>
+          </> : workspace === 'ai' ? <Suspense fallback={<div className="workspace-loading" role="status">Cargando Atlas IA…</div>}><AtlasIA/></Suspense> : <Suspense fallback={<div className="workspace-loading" role="status">Cargando estudio de diseño…</div>}><Workspace view={workspace} onUsePreset={useSectorPreset} onCopy={copyText}/></Suspense>}
+          <footer className="footer"><span><Layers3 size={16}/> UIUX Atlas · Hecho para crear mejor</span><span>Biblioteca educativa · v0.4.0</span></footer>
         </div>
       </main>
 

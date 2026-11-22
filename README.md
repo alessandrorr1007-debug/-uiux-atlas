@@ -1,71 +1,98 @@
-# UIUX Atlas — v0.3.0
+# UIUX Atlas v0.4.0 — Atlas IA lista para conectar
 
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/alessandrorr1007-debug/-uiux-atlas/ci.yml?branch=main&label=Tests)](https://github.com/alessandrorr1007-debug/-uiux-atlas/actions)
-[![Version](https://img.shields.io/badge/versión-0.3.0-8b82ff)](./package.json)
+[![Version](https://img.shields.io/badge/versión-0.4.0-8b82ff)](./package.json)
 
-**UIUX Atlas** es un diccionario interactivo de **406 patrones y conceptos UI/UX** en español, con nombres técnicos, explicaciones, casos de uso y generador de prompts para Google AI Studio, Codex y Antigravity.
+**Web pública:** https://uiux-atlas.netlify.app/
 
-**Web:** https://uiux-atlas.netlify.app/
+UIUX Atlas es un diccionario de **406 patrones UI/UX**, un laboratorio interactivo y una plataforma para crear prompts profesionales. La versión **0.4.0** agrega **Atlas IA**, un asistente conversacional con dos modos únicos:
 
-## Catálogo v0.3.0
+1. **Crear proyecto:** describe una web o aplicación desde cero, combina texto, imágenes, logos, fotos de menús y enlaces de referencia; descubre patrones, colores, estructura y funciones.
+2. **Mejorar proyecto:** comparte una web pública, capturas e instrucciones; recibe recomendaciones para mejorar el diseño sin romper lógica, rutas, autenticación o integraciones.
 
-- **118 entradas anteriores conservadas**, con los mismos IDs para mantener favoritos y selecciones.
-- **288 patrones adicionales** organizados en **24 familias especializadas** de 12 elementos cada una. Los nombres son únicos en todo el catálogo.
-- **8 categorías generales** para navegación sencilla y filtro adicional por familia (selector con grupos).
-- Búsqueda por nombre técnico, descripción, caso de uso y familia en español (ignora mayúsculas y tildes).
-- Fichas individuales con descripción, cuándo utilizarlo, recomendaciones y prompt listo para copiar.
-- Demostraciones **individuales** de 24 patrones base; las demás fichas muestran un ejemplo educativo **representativo de su categoría**, no una simulación específica del patrón.
-- Favoritos y selección múltiple de patrones guardados en el navegador.
-- Generador de prompts de seis decisiones; sin claves de API, IA externa ni consumo de tokens.
+En ambos modos hay conversación, recomendaciones conectadas con los 406 patrones y generación de un prompt final para **Codex, Google AI Studio o Antigravity**.
 
-### Las 24 familias nuevas
+## Activación de Atlas IA
 
-| Área | Familias (12 patrones cada una) |
-|---|---|
-| Navegación y estructura | Navegación avanzada, Estructuras de interfaz, Contenido y lectura |
-| Interacción y datos | Controles de entrada, Flujos de formularios, Búsqueda y descubrimiento, Tablas empresariales, Gráficos y visualizaciones, Dashboards y analítica |
-| Herramientas especializadas | Editores de contenido, Canvas y diagramas, Multimedia y documentos, Mapas y geolocalización |
-| Negocio y usuarios | Comercio electrónico, Pagos y suscripciones, Identidad y seguridad, Colaboración |
-| Experiencia digital | Estados y errores, Gestos e interfaces móviles, Accesibilidad, Interfaces para IA, Marketing y conversión, Educación, POS y operaciones comerciales |
+**Todo el código está listo, pero el proveedor no se activará hasta introducir una API key válida de Groq en Netlify.** NO almacenes la clave en GitHub ni en el frontend.
 
-Datos: `src/data/expansion.ts`, que exporta `expansionFamilies` (24) y `expansion` (288). Los campos `family` y `kind` son opcionales para preservar compatibilidad con las 118 fichas anteriores.
+1. Crea/consulta tu clave en https://console.groq.com/keys .
+2. En Netlify abre el proyecto de UIUX Atlas → **Project configuration** → **Environment variables**.
+3. Añade la variable **GROQ_API_KEY** con el valor secreto, usando scope **Functions** (o All scopes) y el contexto Production.
+4. Guarda y realiza **un nuevo despliegue** en Netlify (necesario para que la Function reciba la variable). **No se necesita modificar GitHub ni generar otro commit solo para añadir la clave.**
+5. Abre **Atlas IA** en la web; el estado indicará "Clave de Groq configurada". Prueba una conversación real y una captura para validar que la clave funciona.
 
-## Funcionalidades existentes de v0.2.0
+El modelo predeterminado es **qwen/qwen3.8-27b** (visión + texto). El estado "configurada" confirma presencia del secreto, no garantiza que la clave tenga permisos o cuota; el primer mensaje valida la conexión real. Guía completa: [docs/ATLAS_IA_SETUP.md](docs/ATLAS_IA_SETUP.md).
 
-- Laboratorio con 24 demostraciones específicas interactivas.
-- 20 plantillas originales (12 webs y 8 aplicaciones).
-- Auditoría de 12 errores frecuentes y 10 criterios de interfaz comercial, **manual**.
-- Estudio con 54 propuestas originales de fotografía; **genera prompts de texto**, no imágenes.
-- Modo claro/oscuro, cuatro acentos y diseño responsive.
+## Qué funciona antes de introducir la clave
 
-## Desarrollo
+- Diseño responsive de Atlas IA y cambio entre sus dos modos.
+- Entrada de texto, hasta tres imágenes JPEG/PNG/WebP por consulta (se comprimen en el navegador).
+- Extracción aproximada de colores en el navegador (sin consumir tokens).
+- Lectura preliminar de HTML público mediante una Netlify Function, con protección de URL. No es una auditoría visual de CSS o JavaScript.
+- Recomendaciones **locales basadas en palabras clave** y selección de patrones.
+- Generador de prompts **local** sin conexión a IA.
+- Etiquetado visible de que las respuestas sin clave son reglas locales, no inteligencia artificial.
+- El catálogo anterior, favoritos y los cuatro módulos de Atlas Studio permanecen intactos.
 
-Node.js 20.19+ (recomendado Node.js 22):
+Una vez configurada la clave, Atlas IA envía texto e imágenes mediante la Function de Netlify a Groq para interpretación. Lee la advertencia de privacidad antes de adjuntar información sensible.
 
-```bash
+## Backend ligero y seguridad
+
+- Endpoint de estado/chat: **GET/POST /api/atlas/chat** (GET consulta el estado sin revelar la clave).
+- Endpoint de referencias web: **POST /api/atlas/inspect**.
+- Clave: **process.env.GROQ_API_KEY**, exclusivamente en funciones.
+- Límite de 3 imágenes por solicitud, compresión local, límites de tamaño, de historial y de tokens.
+- Verificación de mismo origen, validación de datos y **rate limiting nativo de Netlify por IP** (6 solicitudes/min al endpoint de IA y 10/min al de enlaces), más un límite de memoria como defensa adicional.
+- La lectura de URLs públicas solo permite HTTPS, puerto 443 y dominios con IP pública; las peticiones fijan la IP DNS validada, bloquean direcciones privadas y redirecciones inseguras. No accede a webs que requieren autenticación.
+- No se almacenan imágenes ni historiales de chat en una base de datos. El historial de conversación vive solo en memoria mientras está abierta esa sección.
+- Un fallo de Groq muestra el error de forma entendible; no cambia automáticamente a un plan pagado.
+- Groq ofrece cuotas gratuitas limitadas **dependientes de la cuenta y el modelo**. No hay garantía de uso ilimitado; revisa límites y costes del proveedor.
+
+**Limitación de seguridad y costes:** el rate limiting por IP no es una cuota global entre todos los visitantes; una web pública puede agotar los límites de Groq con varios usuarios. Mantén la cuenta en Free, revisa el consumo y considera autenticación y cuotas persistentes antes de permitir un volumen elevado.
+
+## Investigación de enlaces e Instagram
+
+- Un enlace web permite leer **solo el HTML público accesible**, sus encabezados y metadatos. No permite afirmar que se observaron estilos reales, animaciones, comportamiento móvil, autenticación ni el código del sitio.
+- Instagram puede impedir el acceso automático; Atlas IA ofrece subir capturas públicas o propias en esos casos.
+- Las imágenes sí pueden analizarse visualmente por un modelo con visión, después de configurar la API.
+- El texto obtenido de webs es contenido **no confiable**; no debe seguirse como instrucciones del sistema.
+
+## Catálogo y herramientas ya existentes
+
+- **406 patrones**: 80 base + 38 de v0.2 + 288 nuevos de v0.3 en 24 familias.
+- **24 demostraciones individuales** y previews por categoría para el resto, etiquetados honestamente.
+- **20 plantillas por rubro**, 22 criterios de auditoría manual, 54 estilos para prompts fotográficos.
+- Filtros, búsqueda, favoritos, modo claro/oscuro y generador independiente de prompts.
+
+## Desarrollo local
+
+Necesitas Node.js 22.
+
+\`\`\`bash
 npm install
-npm run dev
 npm test
 npm run build
-```
+npm run dev
+\`\`\`
 
-GitHub Actions ejecuta instalación, pruebas y compilación. La configuración de `netlify.toml` admite despliegues automáticos desde GitHub; publicar los cambios de `main` puede activar Netlify.
+Para probar **también las Netlify Functions** localmente usa:
 
-## Arquitectura
+\`\`\`bash
+npx netlify-cli dev
+\`\`\`
 
-- `src/data/components.ts` — unión de 80 entradas base, 38 ampliaciones v0.2 y 288 patrones v0.3.
-- `src/data/additions.ts` — 38 entradas anteriores que conservan su ID.
-- `src/data/expansion.ts` — familias y patrones nuevos, organizados como datos.
-- `src/types.ts` — contrato de componentes, con metadatos opcionales.
-- `src/lib/catalog.ts` — búsqueda y filtrado por categoría/familia.
-- `src/lib/prompt.ts` — generador local de instrucciones.
-- `src/components/Preview.tsx` — ejemplos representativos de las ocho categorías.
-- `src/components/PatternDemo.tsx` — demostraciones específicas existentes.
-- `src/components/Workspace.tsx` — laboratorio, plantillas, auditoría y estudio fotográfico.
-- `docs/RELEASE_0.3.md` — alcance de la ampliación.
+Opcionalmente configura una clave local en un \`.env\` ignorado por Git. **Nunca la incluyas en variables VITE_, en \`netlify.toml\`, ni en el repositorio**.
 
-## Alcance y honestidad del catálogo
+- \`src/components/AtlasIA.tsx\`: UI conversacional.
+- \`src/lib/atlas-ai.ts\`: recomendador local, generador de respaldo, compresión y colores.
+- \`netlify/functions/atlas-chat.mjs\`: orquestador, contexto e integración Groq.
+- \`netlify/functions/atlas-inspect.mjs\`: lector de enlaces.
+- \`netlify/functions/lib/security.mjs\`: validación de origen y URL, SSRF y rate limiting.
+- \`netlify/functions/lib/knowledge.mjs\`: índice compacto de los **406 patrones** para el backend, seleccionados según la consulta. **Sincronízalo cuando agregues patrones al catálogo.**
+- \`tests/atlas-functions.test.mjs\`: tests de backend con proveedor simulado.
+- \`src/lib/atlas-ai.test.ts\`: tests del modo local.
 
-Las 406 entradas abarcan componentes, patrones, comportamientos, visualizaciones y flujos de interfaz: **no todas son componentes de código independientes**. Sus textos y prompts son originales; algunas entradas representan variantes avanzadas de conceptos relacionados. Las demostraciones individuales de los 288 patrones añadidos **no están implementadas en esta versión**. No se ha integrado Atlas AI, y no hay backend, autenticación, análisis de capturas, generación de imágenes ni servicios de IA conectados.
+**La API no puede probarse con una clave real hasta que la configures.** GitHub Actions prueba la lógica con simulaciones, sin llamar a Groq. La cuenta, cuotas y redes externas quedan por verificar en producción.
 
-Referencias de investigación y terminología (consulta educativa; no redistribución de código ajeno): [IBM Carbon](https://carbondesignsystem.com/), [Ant Design](https://ant.design/components/overview/), [PatternFly](https://www.patternfly.org/), [MUI X](https://mui.com/x/), [AWS Cloudscape](https://cloudscape.design/), [W3C APG](https://www.w3.org/WAI/ARIA/apg/patterns/), [GOV.UK Design System](https://design-system.service.gov.uk/), [React Flow](https://reactflow.dev/), [tldraw](https://tldraw.dev/), [Vercel AI Elements](https://elements.ai-sdk.dev/). Los nombres descriptivos son vocabulario general del sector.
+La plataforma no entrena un modelo propio; utiliza un modelo multimodal alojado y un índice propio de conocimientos de UI/UX. A partir de referencias externas se redactan recomendaciones originales, respetando privacidad, propiedad intelectual y límites de acceso.
