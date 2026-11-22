@@ -1,43 +1,58 @@
 # UIUX Atlas
 
-**UIUX Atlas** es una biblioteca educativa de **80 patrones de UI/UX**, con búsqueda, filtros, favoritos, demostraciones interactivas por familia y un constructor de prompts para **Google AI Studio, Codex y Antigravity**.
+**UIUX Atlas v0.2.0** es una biblioteca interactiva en español para aprender patrones de interfaces, probarlos y crear instrucciones profesionales para Google AI Studio, Codex y Antigravity.
 
-![Estado](https://img.shields.io/badge/versión-0.1.0-7c85ff) ![Stack](https://img.shields.io/badge/stack-React%20%2B%20TypeScript-blue)
+**Proyecto:** [GitHub](https://github.com/alessandrorr1007-debug/-uiux-atlas)
 
-## Funcionalidades
-- Explorar 80 patrones divididos en 8 categorías.
-- Buscar ignorando mayúsculas y tildes; filtrar por categoría y favoritos.
-- Abrir una ficha con una demostración interactiva **representativa de su categoría**.
-- Seleccionar múltiples patrones y generar un prompt personalizado y copiable.
-- Cambiar tema (claro/oscuro) y color de acento.
-- Guardar favoritos y preferencias localmente (localStorage).
-- Layout responsive, navegación por teclado y movimiento reducido.
+## Qué hay en la versión 0.2.0
 
-> **Alcance v0.1:** las demos reutilizan prototipos interactivos por familia; todavía no existe una demo individual exhaustiva para cada patrón. Sin backend, cuentas, pagos ni servicios de IA conectados. El generador compone texto localmente y no consume tokens.
+- **118 patrones de UI/UX:** conserva los 80 IDs iniciales y agrega 38 conceptos complementarios sin reemplazar favoritos.
+- **Laboratorio:** 24 demostraciones con controles y estados locales, distintas para cada patrón.
+- **Constructor de prompts:** seis decisiones (proyecto, público, estilo, estructura/portada, interacciones, pantalla) y componentes seleccionados.
+- **20 plantillas por rubro:** 12 sitios web y 8 aplicaciones, con propuestas originales.
+- **Auditoría manual:** 12 errores frecuentes y 10 buenas prácticas; marca qué cumple y qué debe mejorar, y genera un prompt de correcciones.
+- **Estudio fotográfico:** 54 estilos originales en seis rubros (comida, bebidas, ropa, cosmética, tecnología, joyería); crea prompts, **no genera imágenes**.
+- **Biblioteca:** búsqueda, filtros, favoritos, modo claro y oscuro, cuatro acentos, selecciones para el generador.
+- **Privacidad:** favoritos, configuración y progreso de auditoría guardados localmente sin cuentas, backend ni API de IA.
 
-## Desarrollo
-Requiere Node.js 20.19+ (se recomienda Node.js 22).
+> Importante: además de las 24 demostraciones individuales, las demás fichas ofrecen una demostración **representativa de su familia**, no una implementación específica exhaustiva. Las auditorías requieren una evaluación manual; la plataforma no rastrea sitios ni analiza capturas automáticamente. Las plantillas son propuestas orientativas y sus cifras o ejemplos no son datos de negocio reales.
+
+## Requisitos y comandos
+
+Node.js 20.19+ (recomendado Node.js 22).
+
 ```bash
 npm install
 npm run dev
 npm test
 npm run build
 ```
-Abrir la dirección local mostrada por Vite.
+
+Para uso en red local, Vite muestra una dirección al iniciar el servidor. Los tests usan Vitest. GitHub Actions ejecuta instalación, tests y compilación.
+
+## Arquitectura
+
+- `src/data/components.ts` — catálogo base estable; `src/data/additions.ts` — ampliaciones.
+- `src/data/sectors.ts` — 20 rubros.
+- `src/data/photography.ts` — 54 estilos.
+- `src/data/audit.ts` — 22 criterios de revisión manual.
+- `src/components/Workspace.tsx` — las cuatro áreas nuevas.
+- `src/components/PatternDemo.tsx` — 24 demostraciones individuales.
+- `src/components/Preview.tsx` — ejemplos generales de las ocho categorías.
+- `src/lib/prompt.ts` y `src/lib/studio.ts` — generadores de texto de prompts.
+- `src/lib/storage.ts` — preferencias del navegador con tratamiento de errores.
+- `docs/AI_INSTRUCTIONS.md` — normas para asistentes de programación.
 
 ## Despliegue
-Compatible con **Netlify** (comando `npm run build`, carpeta `dist`) y **Vercel**. La configuración de SPA se incluye en `netlify.toml` y `vercel.json`. No hay variables de entorno necesarias.
 
-## Estructura
-- `src/data/components.ts`: catálogo editable
-- `src/components/Preview.tsx`: vistas interactivas de ejemplo
-- `src/lib/prompt.ts`: generador de prompts
-- `src/lib/catalog.ts`: búsquedas y filtros
-- `src/lib/storage.ts`: preferencias y favoritos locales
-- `docs/AI_INSTRUCTIONS.md`: normas para agentes IA
+La web es estática. Incluye `netlify.toml` y `vercel.json`. En Netlify: comando `npm run build`, carpeta `dist`; no son necesarias variables de entorno. **No se despliega automáticamente al crear este repositorio.**
 
-## Privacidad
-Sin analítica, sin inicio de sesión y sin envío de información a servidores. Solo se guardan preferencias/favoritos en el navegador; el portapapeles se usa cuando lo solicita el usuario.
+## Seguridad, calidad y crédito
 
-## Próximos pasos
-Demos específicas por patrón, snippets de código revisados, exportación/importación de colecciones, editor de design tokens y pruebas E2E.
+El usuario mantiene el control de sus datos; se guarda localmente solo información de preferencias y auditoría, sin envío al servidor por parte de esta aplicación. El portapapeles se usa por acción explícita. El contenido educativo es original, basado en terminología UI/UX de uso general y en la inspiración de la guía pública Capa Zero; no se copian literalmente sus prompts ni sus recursos gráficos. Referencia educativa: https://capazero.app/#diccionario
+
+La prioridad de cada rediseño es preservar la lógica funcional y comprobar accesibilidad, rendimiento móvil y compilación. Consulta `docs/RELEASE_0.2.md` para el alcance y las limitaciones.
+
+## Próximas versiones
+
+Demostraciones individuales adicionales para el resto del catálogo, exportación/importación de colecciones, navegación avanzada accesible, pruebas E2E y editor de design tokens.

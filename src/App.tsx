@@ -135,7 +135,7 @@ function App() {
   const openWorkspace = (value: WorkspaceView) => { setWorkspace(value); setMobileNavOpen(false) }
   const useSectorPreset = (preset: SectorPreset) => {
     setPromptIds(preset.components.filter(id => components.some(item => item.id === id)))
-    setConfig(previous => ({ ...previous, project: `${preset.kind === 'app' ? 'Aplicación' : 'Sitio web'} de ${preset.name}`, audience: preset.audience, structure: preset.goal, device: preset.kind === 'app' ? 'Móvil' : 'Móvil y escritorio' }))
+    setConfig(previous => ({ ...previous, project: `${preset.kind === 'app' ? 'Aplicación' : 'Sitio web'} de ${preset.name}`, audience: preset.audience, structure: 'Layout adaptable', device: preset.kind === 'app' ? 'Móvil' : 'Móvil y escritorio' }))
     setBuilderOpen(true)
   }
 
