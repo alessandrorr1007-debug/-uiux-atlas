@@ -1,4 +1,4 @@
-import { categories, type CategoryId, type ComponentInfo, type PreviewKind } from '../types'
+import { categories, type CategoryId, type ComponentInfo } from '../types'
 
 type Row = readonly [id: string, name: string, description: string, useCase: string]
 const rows: Record<CategoryId, readonly Row[]> = {
@@ -117,7 +117,7 @@ export const components: ComponentInfo[] = categories.flatMap(category =>
     name,
     description,
     category: category.id,
-    preview: category.id as PreviewKind,
+    preview: category.id,
     useCase,
     guidance: recommendations[category.id]
   }))

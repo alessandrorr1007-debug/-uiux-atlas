@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
-  ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, ChevronDown, Clipboard,
+  ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronDown, Clipboard,
   Code2, Compass, Copy, Filter, Github, Heart, Layers3, LayoutDashboard, Menu,
-  Moon, Plus, Search, Settings2, SlidersHorizontal, Sparkles, Sun, WandSparkles, X,
+  Moon, Plus, Search, Settings2, Sparkles, Sun, WandSparkles, X,
   type LucideIcon, BarChart3, ClipboardList, ShoppingBag, Bell, LayoutGrid, Type as TypeIcon
 } from 'lucide-react'
 import { categories, type CategoryId, type ComponentInfo, type PromptConfig, type ToolId } from './types'

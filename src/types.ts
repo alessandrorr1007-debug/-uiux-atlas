@@ -10,7 +10,7 @@ export const categories = [
 ] as const
 
 export type CategoryId = (typeof categories)[number]['id']
-export type PreviewKind = 'navigation' | 'layout' | 'dashboard' | 'forms' | 'commerce' | 'feedback' | 'motion' | 'content'
+export type PreviewKind = CategoryId
 export type ToolId = 'Google AI Studio' | 'Codex' | 'Antigravity'
 export type ComponentInfo = {
   id: string
