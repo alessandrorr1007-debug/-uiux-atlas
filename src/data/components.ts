@@ -1,5 +1,6 @@
 import { categories, type CategoryId, type ComponentInfo } from '../types'
 import { additions } from './additions'
+import { expansion } from './expansion'
 
 type Row = readonly [id: string, name: string, description: string, useCase: string]
 const rows: Record<CategoryId, readonly Row[]> = {
@@ -122,7 +123,7 @@ export const components: ComponentInfo[] = categories.flatMap(category =>
     useCase,
     guidance: recommendations[category.id]
   }))
-).concat(additions)
+).concat(additions, expansion)
 
 export function getComponent(id: string) {
   return components.find(item => item.id === id)

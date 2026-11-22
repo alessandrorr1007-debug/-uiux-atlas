@@ -1,34 +1,42 @@
-# Guía para IA — UIUX Atlas v0.2.0
+# Instrucciones para agentes — UIUX Atlas v0.3.0
 
-## Enfoque
-Aplicación React + TypeScript + Vite + Tailwind CSS. **Sin backend** ni secretos. La interfaz permite aprender componentes de diseño, probar demostraciones locales y componer prompts de implementación.
+## Meta
+Diccionario y estudio UI/UX estático, basado en React + TypeScript + Vite + Tailwind CSS. **Sin backend, tokens de IA ni cuentas.**
 
-## Arquitectura a respetar
-- `src/data/components.ts` es la lista original de 80 patrones, con IDs de favoritos persistentes; nunca renombres ni elimines sus IDs.
-- `src/data/additions.ts` contiene 38 ampliaciones: evita nombres/IDs duplicados.
-- `src/data/sectors.ts`, `src/data/photography.ts`, `src/data/audit.ts` son los datasets originales de los módulos.
-- `src/components/PatternDemo.tsx` registra 24 demos individuales; `Preview.tsx` es genérico.
-- `src/components/Workspace.tsx` aloja laboratorio, sectores, auditoría y fotografía.
-- Los generadores de prompts están en `src/lib/prompt.ts` y `src/lib/studio.ts`.
-- `src/lib/storage.ts` encapsula almacenamiento local con fallback.
+## Garantías de compatibilidad
+- Preserva los **80 IDs base** en `src/data/components.ts`.
+- Preserva los **38 IDs** de `src/data/additions.ts`.
+- Mantén los **288 IDs estables** de `src/data/expansion.ts`. Son 24 familias de 12 patrones.
+- El total debe ser 406, sin duplicados de `id` ni `name` normalizado.
+- Cada entrada nueva debe mostrar nombre, descripción, caso de uso, guía de implementación, categoría y familia.
+- Las ocho categorías originales son principales; las 24 familias nuevas son filtros secundarios para no saturar el menú.
+- No elimines favoritos, preferencias o selecciones de localStorage ni cambies sus claves.
+- Si agregas una demo individual, regístrala en `PatternDemo.tsx`, con sus pruebas.
+- En todas las otras fichas indica que la demostración es representativa de la categoría, nunca una demo específica inexistente.
 
 ## Restricciones
-1. No introducir cuentas, API de pago, backend, analítica o llamadas a modelos.
-2. Preservar la lógica y funcionalidades existentes al retocar interfaces.
-3. Evitar copiar prompts largos, material gráfico o textos de guías ajenas.
-4. Etiquetar las demostraciones y números ficticios como ejemplos, nunca como integraciones verdaderas.
-5. Asegurar navegación con teclado, contraste, foco visible, movilidad y prefers-reduced-motion.
-6. No presentar un diagnóstico de auditoría como automático: es una autoevaluación manual.
-7. Guardar preferencias solo en el navegador; contemplar almacenamiento deshabilitado.
-8. Mantener la carga diferida del módulo `Workspace`.
+- No agregar APIs externas ni introducir secretos al frontend.
+- No copiar código, prompts extensos o gráficos de guías y sitios de terceros sin revisar licencia.
+- No inventar reseñas, precios, métricas, transacciones o resultados reales.
+- Conservar estilos, modo claro y oscuro, accesibilidad, foco, movimiento reducido y rendimiento móvil.
+- No alterar funciones existentes al editar UI/UX.
 
-## Verificación
+## Archivos principales
+- `src/data/expansion.ts`: 24 familias de términos nuevos.
+- `src/data/components.ts`: composición del catálogo de 406.
+- `src/lib/catalog.ts`: búsqueda por texto, categorías y familia.
+- `src/lib/catalog.test.ts`: pruebas de integridad del catálogo.
+- `src/App.tsx`: filtros, fichas, favoritos y generador de prompts.
+- `src/studio.css`: estilos del filtro familiar y módulos especializados.
+
+## Verificaciones requeridas
 ```bash
 npm install
 npm test
 npm run build
 ```
-Comprueba manualmente los cuatro módulos y móvil/desktop; comprueba que el constructor copia prompts y conserva la lógica.
 
-## Próximas mejoras
-Añadir tests de interacción E2E, accesibilidad de foco de los diálogos, más demos individuales y documentar acciones reales de usuario.
+Antes de subir, valida IDs, nombres, familias y referencias de plantillas. No aumentes versiones ni el tamaño del catálogo sin pruebas actualizadas.
+
+## Siguientes mejoras
+Implementar demos individuales para nuevos patrones progresivamente, exportación e importación de colecciones, filtros de tipo de patrón y revisión de accesibilidad con pruebas E2E.

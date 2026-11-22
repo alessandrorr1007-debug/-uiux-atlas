@@ -20,6 +20,9 @@ export type ComponentInfo = {
   preview: PreviewKind
   useCase: string
   guidance: string
+  /** Specialized family for advanced catalog patterns; absent in original 118 entries. */
+  family?: string
+  kind?: 'component' | 'pattern' | 'visualization' | 'interaction'
 }
 export type PromptConfig = {
   tool: ToolId
