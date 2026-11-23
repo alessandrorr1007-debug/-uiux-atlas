@@ -1,0 +1,20 @@
+{
+  "name": "uiux-atlas-marketplace",
+  "interface": {
+    "displayName": "UIUX Atlas — Plugins"
+  },
+  "plugins": [
+    {
+      "name": "uiux-atlas",
+      "source": {
+        "source": "local",
+        "path": "./plugins/uiux-atlas"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

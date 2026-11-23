@@ -16,6 +16,17 @@ En ambos modos hay conversación, recomendaciones conectadas con los 406 patrone
 
 Interfaz renovada con colores suaves, modo «Niebla suave» por defecto y «Noche suave», navegación simplificada por objetivos, categorías expandibles y accesos rápidos a la biblioteca, Atlas IA y el laboratorio. Se conservan los 406 patrones y todas las funciones de la versión anterior. [Notas de actualización](docs/RELEASE_0.4.1.md).
 
+## UIUX Atlas para ChatGPT y Codex (Skill + Plugin)
+
+La plataforma incluye también un **paquete portable de Plugin con un Skill de diseño UI/UX**, ubicado en [`plugins/uiux-atlas/`](plugins/uiux-atlas/). La distribución de desarrollo está declarada en [`.agents/plugins/marketplace.json`](.agents/plugins/marketplace.json).
+
+- Dos flujos: **Crear proyecto** y **Mejorar proyecto** con texto, referencias accesibles y recomendaciones de patrones.
+- **406 patrones empaquetados**, consultables por IA sin conectarse a la página ni consumir la API de Groq.
+- Prompts para Codex, Google AI Studio y Antigravity, accesibilidad y conservación de funcionalidades existentes.
+- Instalación local y pruebas documentadas en [`docs/ATLAS_PLUGIN.md`](docs/ATLAS_PLUGIN.md).
+
+**Estado:** paquete preparado en el repositorio; **no está instalado en ninguna cuenta ni publicado en el directorio público**. La instalación y eventual revisión/publicación se realizan después desde el cliente compatible. Esto no reemplaza la web ni activa Groq.
+
 ## Activación de Atlas IA
 
 **Todo el código está listo, pero el proveedor no se activará hasta introducir una API key válida de Groq en Netlify.** NO almacenes la clave en GitHub ni en el frontend.

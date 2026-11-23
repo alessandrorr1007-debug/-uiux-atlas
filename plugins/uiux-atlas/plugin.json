@@ -1,0 +1,37 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "uiux-atlas",
+  "version": "0.1.0",
+  "description": "UIUX Atlas: asesoría para crear o mejorar webs y aplicaciones, basada en 406 patrones UI/UX, referencias visuales y prompts para herramientas de desarrollo.",
+  "homepage": "https://uiux-atlas.netlify.app/",
+  "repository": "https://github.com/alessandrorr1007-debug/-uiux-atlas",
+  "keywords": [
+    "ui-ux",
+    "design-system",
+    "web-design",
+    "prompts",
+    "codex",
+    "gemini",
+    "antigravity"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "UIUX Atlas",
+        "shortDescription": "Diseña o mejora proyectos con 406 patrones UI/UX.",
+        "longDescription": "Asesoría de diseño, arquitectura de pantallas, selección de patrones, análisis de referencias visuales disponibles y generación de prompts para desarrollo.",
+        "developerName": "UIUX Atlas",
+        "category": "Productivity",
+        "capabilities": [
+          "Read"
+        ],
+        "websiteURL": "https://uiux-atlas.netlify.app/",
+        "brandColor": "#695B96",
+        "defaultPrompt": [
+          "Usa UIUX Atlas para estructurar una web de pollería con delivery y WhatsApp.",
+          "Usa UIUX Atlas para revisar ideas de mejora visual de una web, preservando su lógica."
+        ]
+      }
+    }
+  }
+}
