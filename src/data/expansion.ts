@@ -3,7 +3,7 @@ import type { ComponentInfo, CategoryId } from '../types'
 /**
  * UIUX Atlas: 288 nuevos patrones organizados en 24 familias de 12 entradas.
  * Nombres técnicos y explicaciones originales. Identificadores estables.
- * Los elementos se documentan con demos por categoría mientras se amplía el laboratorio.
+ * Cada elemento tiene una maqueta individual en PatternVisual; algunas entradas incluyen demo interactiva.
  */
 export type ExpansionFamily = {
   id: string

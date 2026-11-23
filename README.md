@@ -1,7 +1,7 @@
-# UIUX Atlas v0.4.1 — Diseño Soft Balance y Atlas IA lista para conectar
+# UIUX Atlas v0.4.3 — Catálogo visual completo y Atlas IA lista para conectar
 
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/alessandrorr1007-debug/-uiux-atlas/ci.yml?branch=main&label=Tests)](https://github.com/alessandrorr1007-debug/-uiux-atlas/actions)
-[![Version](https://img.shields.io/badge/versión-0.4.1-8b82ff)](./package.json)
+[![Version](https://img.shields.io/badge/versión-0.4.3-8b82ff)](./package.json)
 
 **Web pública:** https://uiux-atlas.netlify.app/
 
@@ -11,6 +11,10 @@ UIUX Atlas es un diccionario de **406 patrones UI/UX**, un laboratorio interacti
 2. **Mejorar proyecto:** comparte una web pública, capturas e instrucciones; recibe recomendaciones para mejorar el diseño sin romper lógica, rutas, autenticación o integraciones.
 
 En ambos modos hay conversación, recomendaciones conectadas con los 406 patrones y generación de un prompt final para **Codex, Google AI Studio o Antigravity**.
+
+## Catálogo visual completo (v0.4.3)
+
+Cada uno de los 406 patrones muestra una mini maqueta propia basada en su nombre, categoría y función. Puedes pulsar la maqueta para ampliar y ver una explicación del patrón, cuándo usarlo, buenas prácticas y su prompt. Los 46 patrones con demo ofrecen además un área interactiva **separada de la ilustración**. Los dibujos no son capturas reales ni demostraciones funcionales cuando no se indica expresamente. Más detalles: [docs/RELEASE_0.4.3.md](docs/RELEASE_0.4.3.md).
 
 ## Diseño Soft Balance (v0.4.1)
 
@@ -76,7 +80,8 @@ Una vez configurada la clave, Atlas IA envía texto e imágenes mediante la Func
 ## Catálogo y herramientas ya existentes
 
 - **406 patrones**: 80 base + 38 de v0.2 + 288 nuevos de v0.3 en 24 familias.
-- **24 demostraciones individuales** y previews por categoría para el resto, etiquetados honestamente.
+- **406 maquetas SVG identificadas por patrón**: composición visual semántica de cada componente (sin imágenes externas, plantillas de geometría y datos ilustrativos), no una sola vista reciclada por categoría.
+- **46 demostraciones interactivas**: 24 originales y 22 nuevas con controles locales y estados funcionales; el resto muestra su propia maqueta ilustrativa, sin afirmar interacciones inexistentes.
 - **20 plantillas por rubro**, 22 criterios de auditoría manual, 54 estilos para prompts fotográficos.
 - Filtros, búsqueda, favoritos, modo claro/oscuro y generador independiente de prompts.
 

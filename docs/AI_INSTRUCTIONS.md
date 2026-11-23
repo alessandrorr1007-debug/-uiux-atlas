@@ -5,7 +5,7 @@ Diccionario de 406 patrones UI/UX con React 19, TypeScript, Vite y Tailwind, des
 
 ## Funciones principales
 - Diccionario de **406 patrones**: 80 base + 38 + 288 en 24 familias; mantener sus IDs estables y favoritos persistentes.
-- Atlas Studio: 24 demos individuales, 20 rubros, auditoría manual y estilos fotográficos.
+- Atlas Studio: 46 demos interactivas (24 anteriores + 22 nuevas), 406 maquetas SVG semánticas individuales, 20 rubros, auditoría manual y estilos fotográficos.
 - Atlas IA: **solo dos modos**, \`create\` (crear proyecto) y \`improve\` (mejorar proyecto). Ambos aceptan texto, imágenes y enlaces.
 - Con la clave: Groq Qwen 3.8 27B para conversación y visión. Sin clave: recomendaciones y prompts locales **claramente etiquetados sin IA**.
 - El cliente comprime imágenes antes del envío. El backend valida formato/tamaño, selecciona pocos patrones de un índice de 406, consulta Groq y valida el JSON devuelto.
@@ -43,3 +43,13 @@ npm run build
 
 ## Activación
 Ver \`docs/ATLAS_IA_SETUP.md\`. Añadir \`GROQ_API_KEY\` en Netlify Functions y redeplegar; **no hace falta otro commit**.
+
+## Catálogo visual (v0.4.3)
+- `src/lib/pattern-scene.ts`: crea especificaciones deterministas para 406 maquetas; clasifica por IDs y conceptos semánticos (navegación, mapas, gráficos, formularios, comercio, etc.).
+- `src/components/PatternVisual.tsx`: dibuja SVG ligero y accesible para cada patrón; no es una captura de una aplicación ni una promesa de interacción.
+- `src/components/ExtendedPatternDemo.tsx`: 22 demos funcionales nuevas, todas locales y sin datos comerciales reales; `src/components/PatternDemo.tsx` conserva las 24 originales.
+- `src/components/Workspace.tsx`: laboratorio de 46 demos.
+- `src/pattern-visual.css`: maquetas, detalle y demos adaptados a ambos temas y dispositivos.
+- `src/lib/pattern-scene.test.tsx`: prueba cobertura 406, variedad semántica, SVG individual y 46 demos.
+- No vuelvas a usar un preview único de categoría para múltiples patrones; si surge un nuevo tipo, añade su esquema reconocible y pruebas.
+- Mantén `id`, favoritos, formularios, prompts, el API de Groq y el plugin sin cambios funcionales.

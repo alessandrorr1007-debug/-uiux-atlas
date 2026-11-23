@@ -11,6 +11,9 @@ import { loadJSON, saveJSON } from '../lib/storage'
 import { buildPhotoPrompt, buildAuditPrompt, buildSectorPrompt } from '../lib/studio'
 import { specificDemoIds } from './PatternDemo'
 import PatternDemo from './PatternDemo'
+import ExtendedPatternDemo,{extendedDemoIds,hasExtendedDemo} from './ExtendedPatternDemo'
+
+const allDemoIds: readonly string[] = [...specificDemoIds,...extendedDemoIds]
 
 export type WorkspaceView = 'lab' | 'templates' | 'audit' | 'photo'
 type Props = {
@@ -20,7 +23,7 @@ type Props = {
 }
 
 const titles: Record<WorkspaceView, [string, string, string]> = {
-  lab: ['Laboratorio interactivo', 'Prueba componentes antes de utilizarlos.', '24 DEMOS INDIVIDUALES'],
+  lab: ['Laboratorio interactivo', 'Prueba componentes antes de utilizarlos.', '46 DEMOS INTERACTIVAS'],
   templates: ['Plantillas por rubro', 'Estructuras adaptadas a diferentes negocios y aplicaciones.', '20 RUBROS'],
   audit: ['Auditoría UI/UX', 'Diagnóstico manual orientado a corregir problemas reales.', '22 CRITERIOS'],
   photo: ['Estudio fotográfico', 'Crea prompts originales de fotografía comercial.', '54 ESTILOS']
@@ -59,15 +62,15 @@ export default function Workspace({ view, onUsePreset, onCopy }: Props) {
   }
 
   return <section className="workspace-page">
-    <div className="workspace-heading"><div><span className="section-label"><span/>{titles[view][2]}</span><h1>{titles[view][0]}</h1><p>{titles[view][1]}</p></div><span className="workspace-version">ATLAS STUDIO · V0.2</span></div>
+    <div className="workspace-heading"><div><span className="section-label"><span/>{titles[view][2]}</span><h1>{titles[view][0]}</h1><p>{titles[view][1]}</p></div><span className="workspace-version">ATLAS STUDIO · V0.4.3</span></div>
 
     {view === 'lab' && <div className="studio-lab">
-      <div className="studio-list"><div className="studio-list-caption">SELECCIONA UN COMPONENTE</div>{specificDemoIds.map(id => {
+      <div className="studio-list"><div className="studio-list-caption">ELIGE UNA DEMOSTRACIÓN</div>{allDemoIds.map(id => {
         const component = components.find(item => item.id === id)
         if (!component) return null
         return <button key={id} className={demoId === id ? 'studio-list-item active' : 'studio-list-item'} onClick={() => setDemoId(id)}><span>{component.name}</span><ArrowRight size={14}/></button>
       })}</div>
-      <div className="studio-lab-main"><div className="studio-lab-top"><span><Sparkles size={17}/> DEMOSTRACIÓN FUNCIONAL</span><span>{specificDemoIds.indexOf(demoId as typeof specificDemoIds[number])+1} / {specificDemoIds.length}</span></div><div className="studio-lab-stage"><PatternDemo key={demoId} id={demoId}/></div><div className="studio-lab-detail"><h2>{currentDemo?.name}</h2><p>{currentDemo?.description}</p><strong>Cuándo usarlo</strong><p>{currentDemo?.useCase}</p><div className="studio-note"><CheckCircle2 size={17}/>{currentDemo?.guidance}</div></div></div>
+      <div className="studio-lab-main"><div className="studio-lab-top"><span><Sparkles size={17}/> DEMOSTRACIÓN FUNCIONAL</span><span>{allDemoIds.indexOf(demoId)+1} / {allDemoIds.length}</span></div><div className="studio-lab-stage">{hasExtendedDemo(demoId)?<ExtendedPatternDemo key={demoId} id={demoId}/>:<PatternDemo key={demoId} id={demoId}/>}</div><div className="studio-lab-detail"><h2>{currentDemo?.name}</h2><p>{currentDemo?.description}</p><strong>Cuándo usarlo</strong><p>{currentDemo?.useCase}</p><div className="studio-note"><CheckCircle2 size={17}/>{currentDemo?.guidance}</div></div></div>
     </div>}
 
     {view === 'templates' && <><div className="workspace-toolbar"><div className="workspace-filter">{(['all','web','app'] as const).map(kind=><button key={kind} className={sectorKind === kind ? 'active':''} onClick={()=>setSectorKind(kind)}>{kind==='all'?'Todos':kind==='web'?'Sitios web':'Aplicaciones'}</button>)}</div><label className="workspace-search"><Search size={17}/><input aria-label="Buscar rubros" placeholder="Buscar rubro..." value={sectorSearch} onChange={e=>setSectorSearch(e.target.value)}/></label></div><div className="workspace-grid">{shownSectors.map(item=><article className="workspace-card" key={item.id}><span className="workspace-card-icon">{item.kind==='web'?<Laptop size={23}/>:<Smartphone size={23}/>}</span><div className="workspace-card-meta">{item.kind==='web'?'SITIO WEB':'APLICACIÓN MÓVIL'}</div><h2>{item.name}</h2><p>{item.goal}</p><div className="workspace-tags">{item.components.slice(0,3).map(component=><span key={component}>{components.find(c=>c.id===component)?.name??component}</span>)}</div><div className="workspace-card-actions"><button onClick={()=>onCopy(buildSectorPrompt(item))}><Clipboard size={15}/> Copiar base</button><button className="workspace-primary" onClick={()=>onUsePreset(item)}>Personalizar <ArrowRight size={15}/></button></div></article>)}</div>{shownSectors.length===0 && <p className="workspace-empty">No hay resultados para esa búsqueda.</p>}</>}
