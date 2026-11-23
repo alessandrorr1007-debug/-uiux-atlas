@@ -107,32 +107,42 @@ export function extractApproxPalette(canvas: HTMLCanvasElement): string[] {
   return [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5).map(([color])=>color)
 }
 
+export function describeAtlasRequestError(error: unknown): string {
+  const failure=error instanceof Error?error.message:'Fallo al consultar Atlas IA.'
+  if(error instanceof Error&&(error.name==='TimeoutError'||error.name==='AbortError'))
+    return 'La consulta tardó demasiado. Prueba a enviar primero una imagen o analiza el repositorio por separado.'
+  if(/failed to fetch|networkerror|network request failed|load failed|connection lost/i.test(failure))
+    return 'No se recibió respuesta de Netlify. Comprueba la conexión y reintenta con menos imágenes.'
+  return failure
+}
+
+export const ATLAS_IMAGE_DATA_URL_LIMIT=320_000
+
 export async function prepareAtlasImage(file: File): Promise<AtlasImage> {
   if (!['image/jpeg','image/png','image/webp'].includes(file.type)) throw new Error('Usa una imagen JPG, PNG o WebP.')
   if (file.size > 8_000_000) throw new Error('La imagen supera 8 MB. Elige una más pequeña.')
   const image=await createImageBitmap(file)
   try {
-    const maxSide=960
-    const scale=Math.min(1,maxSide/Math.max(image.width,image.height))
-    const canvas=document.createElement('canvas')
-    canvas.width=Math.max(1,Math.round(image.width*scale))
-    canvas.height=Math.max(1,Math.round(image.height*scale))
-    const ctx=canvas.getContext('2d')
-    if(!ctx) throw new Error('No se pudo procesar la imagen.')
-    ctx.fillStyle='#ffffff'
-    ctx.fillRect(0,0,canvas.width,canvas.height)
-    ctx.drawImage(image,0,0,canvas.width,canvas.height)
-    const palette=extractApproxPalette(canvas)
-    let dataUrl=canvas.toDataURL('image/jpeg',0.75)
-    if(dataUrl.length>500_000) {
-      const shrink=document.createElement('canvas')
-      const ratio=Math.min(1,720/Math.max(canvas.width,canvas.height))
-      shrink.width=Math.max(1,Math.round(canvas.width*ratio))
-      shrink.height=Math.max(1,Math.round(canvas.height*ratio))
-      shrink.getContext('2d')?.drawImage(canvas,0,0,shrink.width,shrink.height)
-      dataUrl=shrink.toDataURL('image/jpeg',0.64)
+    let palette:string[]=[]
+    let dataUrl=''
+    // Keep three images below ~1 MB combined. Re-render directly from the
+    // original bitmap if needed, preserving more detail than repeated scaling.
+    for(const [side,quality] of [[960,.72],[840,.69],[740,.65],[640,.60]]){
+      const scale=Math.min(1,side/Math.max(image.width,image.height))
+      const canvas=document.createElement('canvas')
+      canvas.width=Math.max(1,Math.round(image.width*scale))
+      canvas.height=Math.max(1,Math.round(image.height*scale))
+      const ctx=canvas.getContext('2d')
+      if(!ctx)throw new Error('No se pudo procesar la imagen.')
+      ctx.fillStyle='#ffffff'
+      ctx.fillRect(0,0,canvas.width,canvas.height)
+      ctx.drawImage(image,0,0,canvas.width,canvas.height)
+      if(!palette.length)palette=extractApproxPalette(canvas)
+      dataUrl=canvas.toDataURL('image/jpeg',quality)
+      if(dataUrl.length<=ATLAS_IMAGE_DATA_URL_LIMIT)break
     }
-    if (dataUrl.length>540_000) throw new Error('Imagen demasiado grande. Prueba a recortarla.')
+    if(dataUrl.length>ATLAS_IMAGE_DATA_URL_LIMIT)
+      throw new Error('La imagen sigue siendo demasiado grande. Recórtala antes de enviarla.')
     return {id:String(Date.now())+'-'+Math.random().toString(36).slice(2),name:file.name.slice(0,75),dataUrl,palette}
   } finally { image.close() }
 }

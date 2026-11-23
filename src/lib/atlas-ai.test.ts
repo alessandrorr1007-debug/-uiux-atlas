@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { components } from '../data/components'
 import {
   suggestAtlasPatterns, composeAtlasPrompt, isGitHubLink,
+  describeAtlasRequestError, ATLAS_IMAGE_DATA_URL_LIMIT, prepareAtlasImage,
   type SiteInfo, type GitHubRepositoryInfo
 } from './atlas-ai'
 
@@ -59,5 +60,44 @@ describe('Atlas IA: asesor y generación sin API',()=>{
     expect(prompt).toContain('React')
     expect(prompt).toContain('no se ejecutó ni renderizó')
     expect(prompt).toContain('conserva estrictamente autenticación')
+  })
+  it('normaliza Failed to fetch y tiempos de espera sin revelar mensajes técnicos',()=>{
+    expect(describeAtlasRequestError(new TypeError('Failed to fetch'))).toContain('Netlify')
+    const timeout=new Error('The operation was aborted')
+    timeout.name='TimeoutError'
+    expect(describeAtlasRequestError(timeout)).toContain('tardó demasiado')
+    expect(describeAtlasRequestError(new Error('Límite de Groq'))).toBe('Límite de Groq')
+  })
+  it('comprime capturas de forma adaptativa para enviar tres imágenes ligeras',async()=>{
+    const oldDocument=globalThis.document
+    const oldBitmap=globalThis.createImageBitmap
+    let count=0
+    let closed=false
+    Object.defineProperty(globalThis,'createImageBitmap',{configurable:true,value:async()=>({
+      width:1600,height:900,close:()=>{closed=true}
+    })})
+    Object.defineProperty(globalThis,'document',{configurable:true,value:{
+      createElement:()=>{
+        const canvas={width:0,height:0,
+          getContext:()=>({fillStyle:'',fillRect:()=>{},drawImage:()=>{},getImageData:()=>({
+            data:new Uint8ClampedArray([104,118,130,255])
+          })}),
+          toDataURL:()=>{count++;return 'data:image/jpeg;base64,'+'A'.repeat(canvas.width>800?330_000:180_000)}
+        }
+        return canvas
+      }
+    }})
+    try{
+      const fake={name:'captura.jpg',type:'image/jpeg',size:2_000_000} as File
+      const processed=await prepareAtlasImage(fake)
+      expect(processed.dataUrl.length).toBeLessThanOrEqual(ATLAS_IMAGE_DATA_URL_LIMIT)
+      expect(processed.name).toBe('captura.jpg')
+      expect(count).toBeGreaterThan(1)
+      expect(closed).toBe(true)
+      expect(processed.palette.length).toBeGreaterThan(0)
+    }finally{
+      Object.defineProperty(globalThis,'document',{configurable:true,value:oldDocument})
+      Object.defineProperty(globalThis,'createImageBitmap',{configurable:true,value:oldBitmap})
+    }
   })
 })

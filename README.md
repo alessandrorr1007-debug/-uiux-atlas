@@ -1,7 +1,7 @@
-# UIUX Atlas v0.4.4 — Atlas IA analiza repositorios GitHub públicos
+# UIUX Atlas v0.4.5 — Mejor estabilidad de Atlas IA multimodal
 
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/alessandrorr1007-debug/-uiux-atlas/ci.yml?branch=main&label=Tests)](https://github.com/alessandrorr1007-debug/-uiux-atlas/actions)
-[![Version](https://img.shields.io/badge/versión-0.4.4-8b82ff)](./package.json)
+[![Version](https://img.shields.io/badge/versión-0.4.5-8b82ff)](./package.json)
 
 **Web pública:** https://uiux-atlas.netlify.app/
 
@@ -32,6 +32,19 @@ La plataforma incluye también un **paquete portable de Plugin con un Skill de d
 - Instalación local y pruebas documentadas en [`docs/ATLAS_PLUGIN.md`](docs/ATLAS_PLUGIN.md).
 
 **Estado:** paquete preparado en el repositorio; **no está instalado en ninguna cuenta ni publicado en el directorio público**. La instalación y eventual revisión/publicación se realizan después desde el cliente compatible. Esto no reemplaza la web ni activa Groq.
+
+## Respuesta estable con imágenes + GitHub (v0.4.5)
+
+Se corrigieron cuellos de botella detectados al combinar **3 capturas, un repositorio público de GitHub y Groq**:
+
+- Los archivos de frontend de GitHub se leen en **lotes de hasta cuatro llamadas paralelas**, conservando la selección y los límites de seguridad.
+- El navegador comprime imágenes JPEG de forma **adaptativa** y mantiene cada data URL en un máximo de **320 KB** aproximadamente; el conjunto de 3 capturas permanece ligero.
+- Antes de enviar un mensaje se comprueba el tamaño total. El navegador establece un plazo de espera y muestra errores en español en lugar de `Failed to fetch` o respuestas HTML ilegibles.
+- Ante un error se mantienen **imágenes, enlace y borrador** para reintentar. Los patrones y prompts locales continúan disponibles sin fingir una respuesta de IA.
+- El estado verde ahora confirma **presencia** de la clave de Groq, no la validez o disponibilidad real del proveedor. Esta solo se conoce al hacer una petición.
+- Se agregaron pruebas de compresión y lectura concurrente con dobles de prueba, sin claves reales.
+
+Esta corrección es **preventiva y de resiliencia**: sin acceso a los registros privados de Netlify no puede certificarse que explique el fallo exacto observado. Si persiste, revisar los registros de `/api/atlas/chat` en Netlify y anotar código HTTP, duración, carga aproximada y errores de Groq **sin divulgar credenciales**. [Detalles](docs/RELEASE_0.4.5.md).
 
 ## Analizar repositorios GitHub públicos — v0.4.4
 

@@ -131,4 +131,20 @@ describe('Atlas IA · integración segura con repositorios públicos de GitHub',
      else process.env.GROQ_API_KEY=old
    }
  })
+ it('consulta en paralelo archivos de interfaz respetando el límite de concurrencia',async()=>{
+   let active=0,maximum=0
+   const limited=async (url,options)=>{
+     if(String(url).includes('/git/blobs/')){
+       active+=1
+       maximum=Math.max(maximum,active)
+       await new Promise(resolve=>setTimeout(resolve,5))
+       active-=1
+     }
+     return mockGithubFetch(url,options)
+   }
+   const result=await inspectPublicRepository(fixtureUrl,{fetchImpl:limited})
+   assert.equal(result.inspectedFiles.length,3)
+   assert.ok(maximum>1,'Debe leer varios blobs al mismo tiempo')
+   assert.ok(maximum<=4,'El número de lecturas simultáneas debe estar acotado')
+ })
 })

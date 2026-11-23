@@ -7,7 +7,7 @@ import {
 import { components } from '../data/components'
 import type { ToolId } from '../types'
 import {
-  prepareAtlasImage, suggestAtlasPatterns, composeAtlasPrompt, isGitHubLink,
+  prepareAtlasImage, suggestAtlasPatterns, composeAtlasPrompt, isGitHubLink, describeAtlasRequestError,
   type AtlasMode, type AtlasImage, type AtlasMessage, type AtlasReply, type SiteInfo, type GitHubRepositoryInfo
 } from '../lib/atlas-ai'
 
@@ -26,7 +26,7 @@ const SUGGESTIONS = {
 } satisfies Record<AtlasMode, string[]>
 
 function StatusBanner({ status }: { status: Status }) {
-  if(status === 'configured') return <div className="atlas-status online"><Check size={15}/> Clave de Groq configurada. Puedes enviar mensajes y analizar imágenes.</div>
+  if(status === 'configured') return <div className="atlas-status online"><Check size={15}/> Clave de Groq detectada en Netlify. La conexión se comprobará al enviar una consulta.</div>
   if(status === 'loading') return <div className="atlas-status"><LoaderCircle size={15} className="atlas-spin"/> Comprobando conexión de Atlas IA…</div>
   if(status === 'missing') return <div className="atlas-status missing"><CircleAlert size={15}/> Falta GROQ_API_KEY en Netlify. El chat muestra recomendaciones locales y permite generar prompts sin IA.</div>
   return <div className="atlas-status missing"><CircleAlert size={15}/> La función de Netlify no responde en este entorno. Usa la vista local o ejecuta Netlify Dev.</div>
@@ -171,16 +171,23 @@ export default function AtlasIA({ selectedPatternIds: selected, onSelectedPatter
           }])
         }
       }else{
-        const response=await fetch('/api/atlas/chat',{
-          method:'POST',headers:{'content-type':'application/json'},
-          body:JSON.stringify({
-            mode,intent,message:userText,history:messages.slice(-10).map(m=>({role:m.role,content:m.content})),
-            images:photos.map(photo=>photo.dataUrl),colors,sourceUrl:url.trim(),
-            selectedIds:localIds,tool
-          })
+        const payload=JSON.stringify({
+          mode,intent,message:userText,history:messages.slice(-10).map(m=>({role:m.role,content:m.content})),
+          images:photos.map(photo=>photo.dataUrl),colors,sourceUrl:url.trim(),
+          selectedIds:localIds,tool
         })
-        const answer=await response.json() as AtlasReply & {error?:string}
-        if(!response.ok)throw new Error(answer.error||'El asistente no pudo completar la respuesta.')
+        // Avoid sending an oversized multi-image request over mobile connections.
+        if(new TextEncoder().encode(payload).length>1_600_000)
+          throw new Error('Hay demasiados datos adjuntos. Reduce las imágenes y vuelve a enviar.')
+        const response=await fetch('/api/atlas/chat',{
+          method:'POST',headers:{'content-type':'application/json'},body:payload,
+          signal:typeof AbortSignal.timeout==='function'?AbortSignal.timeout(48_000):undefined
+        })
+        const answer=await response.json().catch(()=>null) as (AtlasReply & {error?:string}) | null
+        if(!response.ok)
+          throw new Error(answer?.error||'El servidor de Atlas IA devolvió HTTP '+response.status+'. Prueba nuevamente con una imagen.')
+        if(!answer||typeof answer.reply!=='string')
+          throw new Error('Netlify devolvió una respuesta inesperada. Reintenta o utiliza el prompt local.')
         setSuggested(answer.patternIds||[])
         if(answer.palette?.length)setColors(answer.palette)
         if(answer.site){setSite(answer.site);setRepository(null)}
@@ -195,8 +202,19 @@ export default function AtlasIA({ selectedPatternIds: selected, onSelectedPatter
       if(fileRef.current)fileRef.current.value=''
       if(intent==='prompt')setTimeout(()=>promptRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}),100)
     }catch(error){
-      setMessages(previous=>[...previous,{role:'assistant',content:'No pude completar esta consulta. Puedes reintentar o utilizar la generación local de respaldo.'}])
-      setNotice(error instanceof Error?error.message:'Fallo al consultar Atlas IA.')
+      const detail=describeAtlasRequestError(error)
+      // Keep the draft, the images and the repository so the user can retry.
+      const fallback=[...messages.filter(m=>m.role==='user').map(m=>m.content),userText].join(' ')
+      const ids=selected.length?selected:suggestAtlasPatterns(fallback,[],7).map(item=>item.id)
+      if(intent==='prompt'){
+        setPrompt(composeAtlasPrompt(mode,fallback,ids,tool,colors,site,repository))
+      }
+      setSuggested(ids)
+      setMessages(previous=>[...previous,{
+        role:'assistant',
+        content:'No pude completar el análisis con Groq. '+detail+' Conservé tus imágenes y el enlace. Puedes reintentar o generar un prompt local sin usar IA.'
+      }])
+      setNotice(detail)
     }finally{setBusy(false)}
   }
   const generateLocal=()=>{

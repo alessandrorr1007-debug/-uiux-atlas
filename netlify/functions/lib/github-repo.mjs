@@ -158,19 +158,27 @@ export async function inspectPublicRepository(rawUrl,{fetchImpl=fetch}={}){
   const files=[]
   let budget=MAX_TOTAL_EXCERPTS
   let packageText=''
-  // Small, sequential requests bound both service use and overall context.
-  for(const entry of relevant) {
+  // Read four files concurrently per batch. This keeps request volume bounded
+  // while avoiding an eight-request serial waterfall before the Groq call.
+  for(let offset=0;offset<relevant.length;offset+=4){
+    const batch=await Promise.all(relevant.slice(offset,offset+4).map(async entry=>{
+      let data
+      try {data=await api(path+'/git/blobs/'+entry.sha,MAX_BLOB_BYTES*2,fetchImpl)}
+      catch(error){if(error?.message==='GITHUB_RATE_LIMIT')throw error;return null}
+      if(!data||data.encoding!=='base64'||typeof data.content!=='string')return null
+      return {entry,raw:Buffer.from(data.content.replace(/\s/g,''),'base64').toString('utf8')}
+    }))
+    // Preserve ranking and deterministic context limits regardless of network order.
+    for(const result of batch){
+      if(!result||budget<220)continue
+      const {entry,raw}=result
+      if(entry.kind==='dependencies')packageText=raw.slice(0,9000)
+      const excerpt=sanitizeExcerpt(raw,Math.min(MAX_EXCERPT,budget))
+      if(!excerpt.trim())continue
+      budget-=excerpt.length
+      files.push({path:entry.path,kind:entry.kind,excerpt})
+    }
     if(budget<220)break
-    let data
-    try {data=await api(path+'/git/blobs/'+entry.sha,MAX_BLOB_BYTES*2,fetchImpl)}
-    catch(error){if(error?.message==='GITHUB_RATE_LIMIT')throw error;continue}
-    if(!data||data.encoding!=='base64'||typeof data.content!=='string')continue
-    const raw=Buffer.from(data.content.replace(/\s/g,''),'base64').toString('utf8')
-    if(entry.kind==='dependencies')packageText=raw.slice(0,9000)
-    const excerpt=sanitizeExcerpt(raw,Math.min(MAX_EXCERPT,budget))
-    if(!excerpt.trim())continue
-    budget-=excerpt.length
-    files.push({path:entry.path,kind:entry.kind,excerpt})
   }
   if(!files.length)throw new Error('GITHUB_NO_FRONTEND')
   const frameworks=frameworksFrom(packageText,files)

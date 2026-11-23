@@ -91,3 +91,19 @@ Documentación: https://console.groq.com/docs/vision y https://docs.netlify.com/
 ### Pruebas nuevas
 
 `node --test tests/atlas-github.test.mjs` usa una API de GitHub y un Groq simulados. No solicita acceso a proyectos reales ni emplea tokens. La CI de GitHub Actions ejecuta este test a través de `npm test`.
+
+## Fallos con tres capturas y GitHub (v0.4.5)
+
+El caso de prueba es **Atlas IA → Mejorar proyecto → repositorio público + hasta tres capturas + consulta Groq**. Si el repositorio aparece con la lista de archivos y el mensaje falla después, la lectura inicial sí funciona y el error está en el envío de la consulta o la respuesta del backend, pero los registros son necesarios para identificar la causa exacta.
+
+La versión 0.4.5 hace las lecturas GitHub en lotes paralelos de 4, comprime las capturas de forma adaptativa (máximo ~320 KB de URL codificada por imagen), valida el tamaño total del mensaje, controla esperas y conserva texto/adjuntos al fallar. No afirma haber comprobado que la clave de Groq sea válida solo porque `GET /api/atlas/chat` informa `configured:true`.
+
+Para diagnosticar un fallo persistente:
+1. Probar una solicitud de texto simple a Atlas IA sin imágenes ni GitHub.
+2. Repetir con una sola captura y, después, con tres capturas sin GitHub.
+3. Probar GitHub sin imágenes; después combinar GitHub y una captura.
+4. En **Netlify → Logs → Functions** (ubicación variable según versión), revisar la llamada `/api/atlas/chat`. Anotar duración, código HTTP y mensaje de error, **nunca el valor de GROQ_API_KEY ni el contenido privado**.
+5. Si Groq devuelve error de cuota, clave inválida, formato de respuesta o modelo no disponible, seguir el mensaje correspondiente; no atribuirlo automáticamente al tamaño de la imagen.
+6. Si solo falla en una red móvil, probar con otra conexión. Evitar VPNs o bloqueadores que puedan interrumpir el envío.
+
+No se cambió el modelo `qwen/qwen3.8-27b`; Groq documenta su compatibilidad con imágenes y JSON mode. El límite público de ejecución síncrona de Netlify es 60 segundos, pero una pérdida de conexión del navegador puede producirse antes. En los tests de CI las llamadas de red están simuladas, por lo que el comportamiento real debe validarse en Netlify.
