@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight, ArrowUp, Bot, BrainCircuit, Check, CheckCheck, CircleAlert, Clipboard,
-  FileImage, Globe2, ImagePlus, Link2, LoaderCircle, Palette, RefreshCw,
+  FileImage, Github, Globe2, ImagePlus, Link2, LoaderCircle, Palette, RefreshCw,
   Send, ShieldCheck, Sparkles, WandSparkles, X
 } from 'lucide-react'
 import { components } from '../data/components'
 import type { ToolId } from '../types'
 import {
-  prepareAtlasImage, suggestAtlasPatterns, composeAtlasPrompt,
-  type AtlasMode, type AtlasImage, type AtlasMessage, type AtlasReply, type SiteInfo
+  prepareAtlasImage, suggestAtlasPatterns, composeAtlasPrompt, isGitHubLink,
+  type AtlasMode, type AtlasImage, type AtlasMessage, type AtlasReply, type SiteInfo, type GitHubRepositoryInfo
 } from '../lib/atlas-ai'
 
 type Status = 'loading' | 'configured' | 'missing' | 'unavailable'
@@ -21,7 +21,7 @@ const SUGGESTIONS = {
   improve: [
     'Quiero que mi web se vea más moderna y futurista, sin perder funciones.',
     'Ayúdame a mejorar navegación, responsive y experiencia de compra.',
-    'Analiza mis capturas y recomiéndame una nueva paleta de colores.'
+    'Mi web no está publicada: revisa mi repositorio GitHub y recomiéndame mejoras UI/UX.'
   ]
 } satisfies Record<AtlasMode, string[]>
 
@@ -45,6 +45,7 @@ export default function AtlasIA() {
   const [prompt,setPrompt] = useState('')
   const [tool,setTool] = useState<ToolId>('Codex')
   const [site,setSite] = useState<SiteInfo | null>(null)
+  const [repository,setRepository] = useState<GitHubRepositoryInfo | null>(null)
   const [busy,setBusy] = useState(false)
   const [inspecting,setInspecting] = useState(false)
   const [notice,setNotice] = useState('')
@@ -54,7 +55,7 @@ export default function AtlasIA() {
   const promptRef=useRef<HTMLDivElement>(null)
   const intro = mode==='create'
     ? 'Cuenta tu idea. Puedes escribir, adjuntar un logo o menú, o compartir una referencia visual.'
-    : 'Comparte tu web y explica qué quieres mejorar. Puedes combinar el enlace con capturas.'
+    : 'Comparte una web publicada, un repositorio GitHub público o capturas de tu proyecto todavía en desarrollo.'
   useEffect(()=>{
     const controller=new AbortController()
     fetch('/api/atlas/chat',{signal:controller.signal})
@@ -69,7 +70,7 @@ export default function AtlasIA() {
   useEffect(()=>{conversationEnd.current?.scrollIntoView({behavior:'smooth',block:'end'})},[messages.length,busy])
   const reset=()=>{
     setMessages([]);setPhotos([]);setSuggested([]);setSelected([])
-    setPrompt('');setSite(null);setNotice('');setDraft('');setUrl('');setColors([])
+    setPrompt('');setSite(null);setRepository(null);setNotice('');setDraft('');setUrl('');setColors([])
     if(fileRef.current)fileRef.current.value=''
   }
   const chooseMode=(next:AtlasMode)=>{if(mode!==next){setMode(next);reset()}}
@@ -98,18 +99,24 @@ export default function AtlasIA() {
   const inspect=async()=>{
     if(!url.trim())return
     setInspecting(true);setNotice('')
+    const github=isGitHubLink(url)
     try{
-      const response=await fetch('/api/atlas/inspect',{
+      const response=await fetch(github?'/api/atlas/github':'/api/atlas/inspect',{
         method:'POST',headers:{'content-type':'application/json'},
         body:JSON.stringify({url:url.trim()})
       })
-      const data=await response.json() as {site?:SiteInfo;error?:string}
-      if(!response.ok||!data.site)throw new Error(data.error||'No se pudo leer la página.')
-      setSite(data.site)
-      setNotice(data.site.warning)
+      const data=await response.json() as {site?:SiteInfo;repository?:GitHubRepositoryInfo;error?:string}
+      if(!response.ok)throw new Error(data.error||'No se pudo analizar el enlace.')
+      if(github&&data.repository){
+        setRepository(data.repository);setSite(null)
+        setNotice('Repositorio público leído: '+data.repository.files.length+' archivos de interfaz. '+data.repository.warning)
+      }else if(data.site){
+        setSite(data.site);setRepository(null);setNotice(data.site.warning)
+      }else throw new Error('El servicio no devolvió información legible.')
     }catch(error){
-      setSite(null)
-      setNotice((error instanceof Error?error.message:'El enlace no es accesible.')+' Puedes adjuntar una captura.')
+      setSite(null);setRepository(null)
+      setNotice((error instanceof Error?error.message:'El enlace no es accesible.')+
+        (github?' Para proyectos privados, adjunta capturas: no solicitamos claves ni contraseñas.':' Puedes adjuntar una captura.'))
     }finally{setInspecting(false)}
   }
   const send=async(intent:'advise'|'prompt')=>{
@@ -124,13 +131,27 @@ export default function AtlasIA() {
     )
     const newMessage:AtlasMessage={role:'user',content:userText,attachments:photos.map(photo=>photo.name)}
     setMessages(previous=>[...previous,newMessage])
-    const context=[...messages.filter(item=>item.role==='user').map(item=>item.content),userText].join(' ')
-    const localMatches=suggestAtlasPatterns(context,selected,7)
-    const localIds=selected.length?selected:localMatches.map(item=>item.id)
     try{
+      let activeRepository=repository
+      const linkInMessage=userText.match(/https:\/\/github\.com\/[^\s<>"']+/i)?.[0]?.replace(/[.,;)]+$/,'')||''
+      const repositoryLink=url.trim()||linkInMessage
+      if(status!=='configured'&&isGitHubLink(repositoryLink)&&!activeRepository){
+        try{
+          const preview=await fetch('/api/atlas/github',{
+            method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:repositoryLink})
+          })
+          const data=await preview.json() as {repository?:GitHubRepositoryInfo;error?:string}
+          if(!preview.ok||!data.repository)throw new Error(data.error||'No fue posible leer el repositorio.')
+          activeRepository=data.repository
+          setRepository(data.repository);setSite(null)
+        }catch(error){setNotice(error instanceof Error?error.message:'No se pudo acceder al repositorio público.')}
+      }
+      const context=[...messages.filter(item=>item.role==='user').map(item=>item.content),userText,activeRepository?.description||'',...(activeRepository?.files.map(f=>f.path)||[])].join(' ')
+      const localMatches=suggestAtlasPatterns(context,selected,7)
+      const localIds=selected.length?selected:localMatches.map(item=>item.id)
       if(status!=='configured'){
         if(intent==='prompt'){
-          const result=composeAtlasPrompt(mode,context,localIds,tool,colors,site)
+          const result=composeAtlasPrompt(mode,context,localIds,tool,colors,site,activeRepository)
           setPrompt(result)
           setSuggested(localIds)
           setMessages(previous=>[...previous,{
@@ -156,10 +177,11 @@ export default function AtlasIA() {
         if(!response.ok)throw new Error(answer.error||'El asistente no pudo completar la respuesta.')
         setSuggested(answer.patternIds||[])
         if(answer.palette?.length)setColors(answer.palette)
-        if(answer.site)setSite(answer.site)
+        if(answer.site){setSite(answer.site);setRepository(null)}
+        if(answer.repository){setRepository(answer.repository);setSite(null)}
         if(answer.websiteNotice)setNotice(answer.websiteNotice)
         if(intent==='prompt'){
-          setPrompt(answer.prompt||composeAtlasPrompt(mode,context,localIds,tool,colors,site))
+          setPrompt(answer.prompt||composeAtlasPrompt(mode,context,localIds,tool,colors,site,answer.repository||activeRepository))
         }
         setMessages(previous=>[...previous,{role:'assistant',content:answer.reply}])
       }
@@ -174,7 +196,7 @@ export default function AtlasIA() {
   const generateLocal=()=>{
     const description=[...messages.filter(m=>m.role==='user').map(m=>m.content),draft].join(' ').trim()
     const ids=selected.length?selected:suggestAtlasPatterns(description,[],7).map(i=>i.id)
-    setPrompt(composeAtlasPrompt(mode,description,ids,tool,colors,site))
+    setPrompt(composeAtlasPrompt(mode,description,ids,tool,colors,site,repository))
     setSuggested(ids);setNotice('Prompt generado localmente sin consumir cuota de IA.')
     setTimeout(()=>promptRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}),100)
   }
@@ -195,7 +217,7 @@ export default function AtlasIA() {
       </button>
       <button type="button" className={'atlas-ai-mode'+(mode==='improve'?' active':'')} aria-pressed={mode==='improve'} onClick={()=>chooseMode('improve')}>
         <span className="atlas-ai-mode__icon"><WandSparkles size={22}/></span>
-        <strong>Mejorar proyecto</strong><small>Revisar tu web y planificar mejoras sin romperla</small>
+        <strong>Mejorar proyecto</strong><small>Analizar web o GitHub público, conservando las funciones</small>
         <ArrowRight size={17} className="atlas-ai-mode__arrow"/>
       </button>
     </div>
@@ -229,11 +251,16 @@ export default function AtlasIA() {
             onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();void send('advise')}}}
             placeholder={mode==='create'?'Ej.: Quiero una web moderna para mi pollería; aquí está mi menú…':'Ej.: Quiero mejorar el catálogo y el diseño móvil sin tocar los pedidos…'} disabled={busy}/>
           <div className="atlas-ai-compose__url">
-            <Link2 size={16}/><input aria-label="Enlace de referencia o web para analizar" type="url" value={url} maxLength={700}
-              onChange={event=>{setUrl(event.target.value);setSite(null)}} disabled={busy||inspecting} placeholder="https://... (web o publicación pública)"/>
-            <button type="button" disabled={!url.trim()||inspecting||busy} onClick={()=>void inspect()}>{inspecting?<LoaderCircle size={15} className="atlas-spin"/>:<Globe2 size={15}/>}<span>Leer enlace</span></button>
+            <Link2 size={16}/><input aria-label="Enlace público de GitHub o página web para analizar" type="url" value={url} maxLength={700}
+              onChange={event=>{setUrl(event.target.value);setSite(null);setRepository(null)}} disabled={busy||inspecting} placeholder="https://github.com/usuario/proyecto o enlace web"/>
+            <button type="button" disabled={!url.trim()||inspecting||busy} onClick={()=>void inspect()}>{inspecting?<LoaderCircle size={15} className="atlas-spin"/>:isGitHubLink(url)?<Github size={15}/>:<Globe2 size={15}/>}<span>{isGitHubLink(url)?'Analizar GitHub':'Leer web'}</span></button>
           </div>
           {!!site&&<div className="atlas-ai-site"><Check size={14}/><div><strong>{site.title||'Página pública leída'}</strong><small>HTML público, no inspección visual del sitio.</small></div></div>}
+          {!!repository&&<div className="atlas-ai-repository">
+            <div className="atlas-ai-repository__heading"><Github size={17}/><div><strong>{repository.owner}/{repository.name}</strong><small>Rama: {repository.branch} · {repository.frameworks.join(', ')||'Tecnología no identificada'}</small></div><Check size={15}/></div>
+            <p>{repository.files.length} archivos relevantes consultados de {repository.fileCount} archivos del repositorio público. Revisión de código estática; no equivale a ver el diseño funcionando.</p>
+            <div className="atlas-ai-repository__files" aria-label="Archivos revisados">{repository.files.map(file=><span key={file.path} title={file.path}>{file.path}</span>)}</div>
+          </div>}
           <div className="atlas-ai-compose__actions">
             <div><input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple hidden onChange={e=>void onFiles(e.target.files)}/>
               <button type="button" className="atlas-ai-attach-btn" disabled={busy||photos.length>=3} onClick={()=>fileRef.current?.click()} title="Subir imágenes, logos, menús o capturas"><ImagePlus size={17}/> <span>Imágenes {photos.length}/3</span></button>
@@ -242,7 +269,7 @@ export default function AtlasIA() {
           </div>
         </div>
         {!!notice&&<div role="status" className="atlas-ai-notice"><CircleAlert size={15}/><span>{notice}</span><button aria-label="Cerrar aviso" type="button" onClick={()=>setNotice('')}><X size={14}/></button></div>}
-        <p className="atlas-ai-privacy"><ShieldCheck size={14}/> Sin clave, no se envían mensajes a Groq. Al activar la API, las solicitudes e imágenes se enviarán al proveedor para analizarse. No subas información confidencial.</p>
+        <p className="atlas-ai-privacy"><ShieldCheck size={14}/> GitHub: solo repositorios públicos; lectura parcial de código sin ejecutarlo. Sin Groq puedes consultar archivos y generar prompts locales. Con Groq activo, los fragmentos relevantes, mensajes e imágenes se envían al proveedor. No compartas secretos ni enlaces privados.</p>
       </div>
       <aside className="atlas-ai-insights">
         <div className="atlas-ai-panel">

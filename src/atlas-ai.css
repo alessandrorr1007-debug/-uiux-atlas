@@ -101,3 +101,19 @@
 @media(max-width:850px){.atlas-ai-workspace{grid-template-columns:minmax(0,1fr)}.atlas-ai-insights{grid-template-columns:repeat(2,minmax(0,1fr))}.atlas-ai-prompt-settings{grid-column:1/-1}.atlas-ai-messages{max-height:440px}}
 @media(max-width:560px){.atlas-ai-heading{gap:11px;margin:5px 0 16px;flex-wrap:wrap}.atlas-ai-heading__symbol{width:45px;height:45px;border-radius:12px}.atlas-ai-heading h1{font-size:26px}.atlas-ai-heading p{font-size:10px}.atlas-ai-reset{margin-left:0;padding:8px 10px}.atlas-ai-reset span{display:none}.atlas-ai-mode-grid{gap:8px}.atlas-ai-mode{padding:13px;min-height:165px}.atlas-ai-mode strong{font-size:13px}.atlas-ai-mode small{font-size:10px}.atlas-ai-mode__arrow{right:10px;top:13px}.atlas-ai-chat__title{padding:13px;font-size:11px}.atlas-ai-chat__local{font-size:9px}.atlas-ai-messages{padding:16px 12px;max-height:390px;min-height:245px}.atlas-ai-message{max-width:100%}.atlas-ai-compose{padding:12px}.atlas-ai-insights{grid-template-columns:1fr}.atlas-ai-prompt-settings{grid-column:auto}.atlas-ai-panel{padding:14px}.atlas-ai-compose__url button span{display:none}}
 @media(prefers-reduced-motion:reduce){.atlas-spin{animation:none}.atlas-ai-mode{transition:none}}
+
+/* Public GitHub repository summary: static source inspection, not a rendered preview. */
+.atlas-ai-repository{
+  border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));
+  background:color-mix(in srgb,var(--accent) 6%,var(--surface));
+  border-radius:11px;padding:12px;display:grid;gap:10px;min-width:0;
+}
+.atlas-ai-repository__heading{display:flex;align-items:center;gap:10px;min-width:0}
+.atlas-ai-repository__heading>svg{flex-shrink:0;color:var(--accent)}
+.atlas-ai-repository__heading>div{flex:1;min-width:0}
+.atlas-ai-repository__heading strong{font-size:12px;display:block;overflow-wrap:anywhere}
+.atlas-ai-repository__heading small{font-size:10px;color:var(--muted);line-height:1.55;display:block;overflow-wrap:anywhere}
+.atlas-ai-repository>p{font-size:10px;color:var(--muted);line-height:1.65;margin:0}
+.atlas-ai-repository__files{display:flex;flex-wrap:wrap;gap:6px;min-width:0;max-height:112px;overflow-y:auto}
+.atlas-ai-repository__files>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:9px;color:var(--muted)}
+@media(max-width:560px){.atlas-ai-repository{padding:10px}.atlas-ai-repository__files{max-height:90px}}

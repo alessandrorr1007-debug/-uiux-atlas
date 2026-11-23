@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { components } from '../data/components'
 import {
-  suggestAtlasPatterns, composeAtlasPrompt,
-  type SiteInfo
+  suggestAtlasPatterns, composeAtlasPrompt, isGitHubLink,
+  type SiteInfo, type GitHubRepositoryInfo
 } from './atlas-ai'
 
 describe('Atlas IA: asesor y generación sin API',()=>{
@@ -37,5 +37,27 @@ describe('Atlas IA: asesor y generación sin API',()=>{
     expect(output).toContain('https://example.org')
     expect(output).toContain('Bento Grid')
     expect(output).toContain('HTML preliminar')
+  })
+  it('identifica enlaces de GitHub sin confundir hosts similares',()=>{
+    expect(isGitHubLink('https://github.com/demo/proyecto')).toBe(true)
+    expect(isGitHubLink('https://github.com.evil.test/demo/proyecto')).toBe(false)
+    expect(isGitHubLink('https://example.org/')).toBe(false)
+  })
+  it('crea un prompt local basado en los archivos inspeccionados de un repo público',()=>{
+    const repository:GitHubRepositoryInfo={
+      url:'https://github.com/demo/proyecto',owner:'demo',name:'proyecto',
+      branch:'main',description:'Frontend React',frameworks:['React','Vite'],
+      fileCount:120,
+      files:[{path:'src/App.tsx',kind:'interface'},{path:'src/styles.css',kind:'styles'}],
+      inspected:'source_code_only',truncated:false,
+      warning:'Análisis estático de archivos públicos.'
+    }
+    const prompt=composeAtlasPrompt('improve','Moderniza la portada sin romperla',['hero-section'],'Codex',[],null,repository)
+    expect(prompt).toContain('https://github.com/demo/proyecto')
+    expect(prompt).toContain('src/App.tsx')
+    expect(prompt).toContain('src/styles.css')
+    expect(prompt).toContain('React')
+    expect(prompt).toContain('no se ejecutó ni renderizó')
+    expect(prompt).toContain('conserva estrictamente autenticación')
   })
 })

@@ -6,8 +6,24 @@ import { buildPrompt } from './prompt'
 export type AtlasMode = 'create' | 'improve'
 export type AtlasImage = { id: string; name: string; dataUrl: string; palette: string[] }
 export type SiteInfo = { url: string; title: string; description: string; warning: string; headings?: string[]; excerpt?: string }
+export type GitHubRepositoryInfo = {
+  url: string
+  name: string
+  owner: string
+  branch: string
+  description: string
+  frameworks: string[]
+  fileCount: number
+  files: { path: string; kind: string }[]
+  inspected: 'source_code_only'
+  truncated: boolean
+  warning: string
+}
+export function isGitHubLink(value: string): boolean {
+  try { return new URL(value.trim()).hostname.toLowerCase() === 'github.com' } catch { return false }
+}
 export type AtlasMessage = { role: 'user' | 'assistant'; content: string; attachments?: string[] }
-export type AtlasReply = { reply: string; patternIds: string[]; palette: string[]; prompt: string; site?: SiteInfo | null; websiteNotice?: string }
+export type AtlasReply = { reply: string; patternIds: string[]; palette: string[]; prompt: string; site?: SiteInfo | null; repository?: GitHubRepositoryInfo | null; websiteNotice?: string }
 
 const boosts: readonly [RegExp, readonly string[]][] = [
   [/polleria|restaurante|comida|delivery|hamburguesa|cafeteria/,['product-card','hero-section','cart-drawer','product-gallery','sticky-add-to-cart','checkout-steps']],
@@ -45,7 +61,8 @@ export function composeAtlasPrompt(
   selectedIds: string[],
   tool: ToolId,
   colors: string[],
-  site?: SiteInfo | null
+  site?: SiteInfo | null,
+  repository?: GitHubRepositoryInfo | null
 ): string {
   const chosen=components.filter(item=>selectedIds.includes(item.id)).slice(0,16)
   const items=chosen.length?chosen:suggestAtlasPatterns(description, [], 6)
@@ -56,6 +73,13 @@ export function composeAtlasPrompt(
   const siteText=site?.url
     ? '\nREFERENCIA PÚBLICA: '+site.url+'; '+(site.title||'sin título')+'. Lectura HTML preliminar, no inspección visual confirmada.'
     : ''
+  const repoText=repository?.url
+    ? '\nREPOSITORIO GITHUB PÚBLICO: '+repository.url+
+      '\nRama: '+repository.branch+
+      '\nTecnologías identificadas: '+(repository.frameworks.join(', ')||'sin confirmar')+
+      '\nArchivos de interfaz leídos: '+repository.files.map(f=>f.path).slice(0,8).join(', ')+
+      '\nAl implementar, inspecciona estos archivos y confirma el resultado visual. Esta revisión fue estática y parcial; no se ejecutó ni renderizó el proyecto. No afirmes fallos que no has comprobado.'
+    : ''
   const palette=colors.length?'\nPALETA SUGERIDA (extraída aproximadamente de las imágenes o seleccionada): '+colors.join(', ')+'. Mantén contraste suficiente.':''
   const componentText=buildPrompt(items,{
     project, audience:'usuarios de este proyecto', style:'profesional y coherente con las referencias proporcionadas',
@@ -63,7 +87,7 @@ export function composeAtlasPrompt(
     structure:'layout adaptable y jerarquía clara',hero:'portada acorde al sector',
     motion:'microinteracciones discretas',device:'Móvil y escritorio'
   })
-  return 'INSTRUCCIONES PARA '+tool.toUpperCase()+'\n'+intro+'\n\nSOLICITUD DEL USUARIO:\n'+project+siteText+palette+
+  return 'INSTRUCCIONES PARA '+tool.toUpperCase()+'\n'+intro+'\n\nSOLICITUD DEL USUARIO:\n'+project+siteText+repoText+palette+
     '\n\n'+componentText+'\n\nAntes de inventar datos comerciales, precios, reseñas, disponibilidad o características que no se conocen, utiliza marcadores claros y solicita la información que falte. No asumas que una URL pública concede acceso al código.'
 }
 

@@ -1,14 +1,14 @@
-# UIUX Atlas v0.4.3 — Catálogo visual completo y Atlas IA lista para conectar
+# UIUX Atlas v0.4.4 — Atlas IA analiza repositorios GitHub públicos
 
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/alessandrorr1007-debug/-uiux-atlas/ci.yml?branch=main&label=Tests)](https://github.com/alessandrorr1007-debug/-uiux-atlas/actions)
-[![Version](https://img.shields.io/badge/versión-0.4.3-8b82ff)](./package.json)
+[![Version](https://img.shields.io/badge/versión-0.4.4-8b82ff)](./package.json)
 
 **Web pública:** https://uiux-atlas.netlify.app/
 
 UIUX Atlas es un diccionario de **406 patrones UI/UX**, un laboratorio interactivo y una plataforma para crear prompts profesionales. La versión **0.4.0** agrega **Atlas IA**, un asistente conversacional con dos modos únicos:
 
 1. **Crear proyecto:** describe una web o aplicación desde cero, combina texto, imágenes, logos, fotos de menús y enlaces de referencia; descubre patrones, colores, estructura y funciones.
-2. **Mejorar proyecto:** comparte una web pública, capturas e instrucciones; recibe recomendaciones para mejorar el diseño sin romper lógica, rutas, autenticación o integraciones.
+2. **Mejorar proyecto:** comparte una web publicada, un repositorio GitHub público aún sin desplegar o capturas. Obtén recomendaciones concretas para mejorar UI/UX sin romper rutas, autenticación, pagos o integraciones.
 
 En ambos modos hay conversación, recomendaciones conectadas con los 406 patrones y generación de un prompt final para **Codex, Google AI Studio o Antigravity**.
 
@@ -30,6 +30,20 @@ La plataforma incluye también un **paquete portable de Plugin con un Skill de d
 - Instalación local y pruebas documentadas en [`docs/ATLAS_PLUGIN.md`](docs/ATLAS_PLUGIN.md).
 
 **Estado:** paquete preparado en el repositorio; **no está instalado en ninguna cuenta ni publicado en el directorio público**. La instalación y eventual revisión/publicación se realizan después desde el cliente compatible. Esto no reemplaza la web ni activa Groq.
+
+## Analizar repositorios GitHub públicos — v0.4.4
+
+En **Atlas IA → Mejorar proyecto**, pega un enlace HTTPS como `https://github.com/usuario/proyecto` y pulsa **Analizar GitHub**. También puedes pegar el enlace y enviar directamente una consulta. El proyecto **no necesita estar desplegado**.
+
+El lector de Netlify **`POST /api/atlas/github`** usa la API oficial de GitHub para obtener solo metadatos y un máximo de **8 archivos relevantes de frontend**, por ejemplo `src/App.tsx`, estilos, páginas y `package.json`. El navegador muestra la rama, frameworks y nombres de archivos; **no recibe extractos del código fuente** de la función de inspección. Las credenciales de GitHub no son necesarias para repositorios públicos.
+
+- **Sin GROQ_API_KEY:** lectura de metadatos, lista de archivos inspeccionados, selección de patrones y **prompt local** que indica qué archivos debería revisar la herramienta de desarrollo. No atribuir hallazgos de código a una IA inexistente.
+- **Con GROQ_API_KEY:** el backend vuelve a usar la lectura segura (con caché breve) y envía extractos de código de interfaz seleccionados, junto al mensaje del usuario, a Groq. Atlas IA debe citar los archivos leídos, separar observaciones e inferencias y recomendar mejoras por prioridad.
+- **Repositorios privados:** no se leen sin una futura conexión autorizada; no se piden tokens, contraseñas ni claves en el chat. El usuario puede compartir capturas.
+- **Limitaciones:** análisis estático y parcial, no renderiza la web ni verifica visualmente componentes, seguridad o funcionalidad. Complementa con capturas para validar la apariencia.
+- **Seguridad y cuotas:** URL HTTPS estricta a github.com, endpoints fijos api.github.com, exclusión de backend/secretos/lockfiles, extractos acotados, filtros de líneas sensibles, límites por IP y caché temporal de cinco minutos. GitHub tiene límites de API; opcionalmente configura `GITHUB_READ_TOKEN` **solo en Functions** para consultas públicas de mayor volumen (jamás en cliente). No concede lectura de repos privados aunque se configure.
+
+Ver [instrucciones y pruebas](docs/ATLAS_IA_SETUP.md) y [notas de la versión](docs/RELEASE_0.4.4.md).
 
 ## Activación de Atlas IA
 
