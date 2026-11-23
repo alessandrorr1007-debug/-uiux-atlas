@@ -12,6 +12,8 @@ UIUX Atlas es un diccionario de **406 patrones UI/UX**, un laboratorio interacti
 
 En ambos modos hay conversación, recomendaciones conectadas con los 406 patrones y generación de un prompt final para **Codex, Google AI Studio o Antigravity**.
 
+**Flujo unificado de prompts:** Atlas IA concentra la generación de instrucciones. El antiguo constructor independiente fue retirado del menú y de los diálogos. Desde la biblioteca se pueden seleccionar varios patrones y abrir Atlas IA con ellos; desde cada detalle se puede enviar el patrón directamente al asistente. Las plantillas por rubro abren Atlas IA con su objetivo y sus patrones precargados. Se conservan favoritos, demos y la selección persistida localmente.
+
 ## Catálogo visual completo (v0.4.3)
 
 Cada uno de los 406 patrones muestra una mini maqueta propia basada en su nombre, categoría y función. Puedes pulsar la maqueta para ampliar y ver una explicación del patrón, cuándo usarlo, buenas prácticas y su prompt. Los 46 patrones con demo ofrecen además un área interactiva **separada de la ilustración**. Los dibujos no son capturas reales ni demostraciones funcionales cuando no se indica expresamente. Más detalles: [docs/RELEASE_0.4.3.md](docs/RELEASE_0.4.3.md).

@@ -617,3 +617,20 @@ body { background: var(--bg); }
   .pattern-card, .start-path, .atlas-ai-mode { transition: none; }
   .pattern-card:hover, .start-path:hover, .atlas-ai-mode:hover { transform: none; }
 }
+
+/* Atlas IA is now the only prompt-generation workspace. */
+.atlas-ai-imported {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: -4px 0 11px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb,var(--accent) 28%,var(--border));
+  background: color-mix(in srgb,var(--accent) 7%,var(--surface));
+  color: var(--muted);
+  border-radius: 9px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.atlas-ai-imported svg { color: var(--accent); flex-shrink: 0; }
+.atlas-ai-imported strong { color: var(--ink); }

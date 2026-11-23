@@ -32,16 +32,21 @@ function StatusBanner({ status }: { status: Status }) {
   return <div className="atlas-status missing"><CircleAlert size={15}/> La función de Netlify no responde en este entorno. Usa la vista local o ejecuta Netlify Dev.</div>
 }
 
-export default function AtlasIA() {
+type AtlasIAProps = {
+  selectedPatternIds: string[]
+  onSelectedPatternIdsChange: (value: string[] | ((previous: string[]) => string[])) => void
+  initialDraft?: string
+}
+
+export default function AtlasIA({ selectedPatternIds: selected, onSelectedPatternIdsChange: setSelected, initialDraft = '' }: AtlasIAProps) {
   const [mode,setMode] = useState<AtlasMode>('create')
   const [status,setStatus] = useState<Status>('loading')
-  const [draft,setDraft] = useState('')
+  const [draft,setDraft] = useState(initialDraft)
   const [url,setUrl] = useState('')
   const [photos,setPhotos] = useState<AtlasImage[]>([])
   const [colors,setColors] = useState<string[]>([])
   const [messages,setMessages] = useState<AtlasMessage[]>([])
   const [suggested,setSuggested] = useState<string[]>([])
-  const [selected,setSelected] = useState<string[]>([])
   const [prompt,setPrompt] = useState('')
   const [tool,setTool] = useState<ToolId>('Codex')
   const [site,setSite] = useState<SiteInfo | null>(null)
@@ -68,12 +73,13 @@ export default function AtlasIA() {
     return ()=>controller.abort()
   },[])
   useEffect(()=>{conversationEnd.current?.scrollIntoView({behavior:'smooth',block:'end'})},[messages.length,busy])
-  const reset=()=>{
-    setMessages([]);setPhotos([]);setSuggested([]);setSelected([])
+  const reset=(preservePatterns = false)=>{
+    setMessages([]);setPhotos([]);setSuggested([])
+    if(!preservePatterns)setSelected([])
     setPrompt('');setSite(null);setRepository(null);setNotice('');setDraft('');setUrl('');setColors([])
     if(fileRef.current)fileRef.current.value=''
   }
-  const chooseMode=(next:AtlasMode)=>{if(mode!==next){setMode(next);reset()}}
+  const chooseMode=(next:AtlasMode)=>{if(mode!==next){setMode(next);reset(true)}}
   const onFiles=async (input:FileList|null)=>{
     if(!input?.length)return
     const allowed=Math.max(0,3-photos.length)
@@ -200,15 +206,16 @@ export default function AtlasIA() {
     setSuggested(ids);setNotice('Prompt generado localmente sin consumir cuota de IA.')
     setTimeout(()=>promptRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}),100)
   }
-  const recommendations=components.filter(item=>suggested.includes(item.id)).slice(0,12)
+  const recommendations=[...components.filter(item=>selected.includes(item.id)),...components.filter(item=>suggested.includes(item.id)&&!selected.includes(item.id))].slice(0,16)
 
   return <section className="atlas-ai">
     <header className="atlas-ai-heading">
       <div className="atlas-ai-heading__symbol"><BrainCircuit size={27}/></div>
       <div><span className="atlas-ai-eyebrow">UIUX ATLAS · ASISTENTE DE DISEÑO</span><h1>Atlas <span>IA</span></h1><p>Convierte ideas y referencias en proyectos bien definidos.</p></div>
-      <button type="button" className="atlas-ai-reset" onClick={reset} title="Iniciar conversación nueva"><RefreshCw size={16}/><span>Nueva conversación</span></button>
+      <button type="button" className="atlas-ai-reset" onClick={()=>reset()} title="Iniciar conversación nueva"><RefreshCw size={16}/><span>Nueva conversación</span></button>
     </header>
     <StatusBanner status={status}/>
+    {selected.length>0&&<div className="atlas-ai-imported"><Sparkles size={15}/><span><strong>{selected.length} {selected.length===1?'patrón listo':'patrones listos'} para tu proyecto.</strong> Ya puedes conversar y generar tu prompt aquí, sin usar otro constructor.</span></div>}
     <div className="atlas-ai-mode-grid" aria-label="Elegir objetivo de Atlas IA">
       <button type="button" className={'atlas-ai-mode'+(mode==='create'?' active':'')} aria-pressed={mode==='create'} onClick={()=>chooseMode('create')}>
         <span className="atlas-ai-mode__icon"><Sparkles size={22}/></span>
