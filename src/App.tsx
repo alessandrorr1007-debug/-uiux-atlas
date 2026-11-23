@@ -179,7 +179,7 @@ function App() {
       <div className="sidebar__nav">
         <button className={workspace==='atlas' && onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(true); setSearch(''); selectCategory('all') }}><Heart size={18}/><span>Favoritos</span><em>{favorites.length}</em></button>
       </div>
-      <div className="sidebar__bottom"><div className="sidebar__foot">ATLAS STUDIO <span>V 0.4.5</span></div></div>
+      <div className="sidebar__bottom"><div className="sidebar__foot">ATLAS STUDIO <span>V 0.4.6</span></div></div>
     </>
   )
 
@@ -247,7 +247,7 @@ function App() {
             ) : <div className="empty-state"><div><Search size={27}/></div><h3>No encontramos componentes</h3><p>Prueba con otra palabra o elimina los filtros para ver la biblioteca completa.</p><button className="secondary-button" onClick={() => { setSearch(''); setOnlyFavorites(false); selectCategory('all') }}>Limpiar filtros <ArrowRight size={15}/></button></div>}
           </section>
           </> : workspace === 'ai' ? <Suspense fallback={<div className="workspace-loading" role="status">Cargando Atlas IA…</div>}><AtlasIA selectedPatternIds={promptIds} onSelectedPatternIdsChange={setPromptIds} initialDraft={aiBrief}/></Suspense> : <Suspense fallback={<div className="workspace-loading" role="status">Cargando estudio de diseño…</div>}><Workspace view={workspace} onUsePreset={useSectorPreset} onCopy={copyText}/></Suspense>}
-          <footer className="footer"><span><Layers3 size={16}/> UIUX Atlas · Hecho para crear mejor</span><span>Biblioteca educativa · v0.4.5</span></footer>
+          <footer className="footer"><span><Layers3 size={16}/> UIUX Atlas · Hecho para crear mejor</span><span>Biblioteca educativa · v0.4.6</span></footer>
         </div>
       </main>
 

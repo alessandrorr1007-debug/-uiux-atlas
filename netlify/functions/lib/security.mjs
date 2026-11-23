@@ -148,13 +148,23 @@ export function extractPageInfo(html, url) {
     return tag ? decode(tag.match(/\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i)?.[1]||tag.match(/\bcontent\s*=\s*'([^']*)'/i)?.[1]||'').slice(0,330) : ''
   }
   const description=getMeta('description')||getMeta('og:description')
+  // An optional public Open Graph thumbnail, not a rendered screenshot.
+  // Reject data, private networks, unsafe ports and secret-bearing URLs.
+  const rawPreview=getMeta('og:image')||getMeta('twitter:image')
+  let previewImage=''
+  if(rawPreview) {
+    try { previewImage=validatePublicUrl(new URL(rawPreview,url).toString()).toString().slice(0,700) }
+    catch { /* No safe public thumbnail declared */ }
+  }
   const headings=[...html.matchAll(/<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi)].map(x=>cleanText(x[1]).slice(0,130)).filter(Boolean).slice(0,14)
   const body=cleanText(html).slice(0,4500)
-  const blocked=/(instagram\.com|facebook\.com)/i.test(new URL(url).hostname) &&
-    (!body || /log in to instagram|inicia sesi[oó]n|login • instagram/i.test(title + ' ' + body.slice(0,450)))
+  const socialHost=/(instagram\.com|facebook\.com|linkedin\.com|tiktok\.com)/i.test(new URL(url).hostname)
+  const loginShell=/log in to instagram|inicia sesi[oó]n|login • instagram|sign in to linkedin|join linkedin|log in to tiktok/i
+  const blocked=socialHost &&
+    (!body || loginShell.test(title+' '+body.slice(0,450)) || (!description && headings.length===0 && body.length<160))
   return {
-    url, title, description, headings, excerpt:body,
-    inspected:'html_only',
+    url, title, description, headings, excerpt:body, previewImage,
+    inspected:'html_only', access:blocked?'limited':'metadata',
     warning:blocked
       ? 'La plataforma parece restringir la lectura pública. Sube una captura de la publicación para analizar colores y diseño.'
       : 'Lectura de HTML público: no equivale a una auditoría visual, del CSS o de flujos privados.'

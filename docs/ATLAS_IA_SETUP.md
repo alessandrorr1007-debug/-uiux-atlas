@@ -107,3 +107,36 @@ Para diagnosticar un fallo persistente:
 6. Si solo falla en una red móvil, probar con otra conexión. Evitar VPNs o bloqueadores que puedan interrumpir el envío.
 
 No se cambió el modelo `qwen/qwen3.8-27b`; Groq documenta su compatibilidad con imágenes y JSON mode. El límite público de ejecución síncrona de Netlify es 60 segundos, pero una pérdida de conexión del navegador puede producirse antes. En los tests de CI las llamadas de red están simuladas, por lo que el comportamiento real debe validarse en Netlify.
+
+## Cómo poner referencias en Atlas IA — v0.4.6
+
+### 1. Elegir objetivo
+- **Crear proyecto:** quieres comenzar desde cero y proporcionar estilos, logos, inspiraciones y enlaces de ejemplo.
+- **Mejorar proyecto:** tienes una web, repo o prototipo y quieres rediseñarlo sin romper la lógica.
+Las áreas de enlaces e imágenes son iguales en ambos modos.
+
+### 2. Enlaces: **un único campo**
+1. Copia la URL pública completa desde el navegador (por ejemplo `https://instagram.com/p/...`, `https://www.linkedin.com/posts/...`, `https://github.com/usuario/repositorio` o `https://ejemplo.com`).
+2. Pégala en **Enlaces** y pulsa **Agregar** o Enter.
+3. Repite hasta cuatro veces para combinar referencias. Puedes consultar y eliminar cada tarjeta.
+4. Cuando se pueden leer metadatos públicos, se muestran título/descripción/miniatura Open Graph. La miniatura no equivale a ver un diseño funcionando. GitHub permite leer código estático; el primer repo se inspecciona a fondo y los restantes se mencionan como referencias.
+5. Instagram, LinkedIn y otras redes pueden bloquear la lectura. Si aparece «Lectura limitada», **sube una captura**. No se solicitan credenciales ni se intenta eludir login.
+
+### 3. Imágenes: **separadas de enlaces**
+1. Pulsa **Agregar imágenes**, abre la galería/archivos y selecciona hasta tres JPG, PNG o WebP.
+2. Úsalas para enseñar capturas de Instagram/LinkedIn, logos, menús, secciones o diseños.
+3. Verifica las miniaturas; puedes quitar cada imagen. Atlas prepara una paleta aproximada localmente.
+
+### 4. Pedir recomendaciones
+Escribe qué quieres lograr o conservar; pulsa **Enviar**. Con Groq configurado, el asistente analiza los datos accesibles y las capturas; sin Groq funciona el recomendador y el prompt local. En **Mejorar proyecto**, preservar rutas, compras, autenticación, APIs y demás lógica salvo orden explícita.
+
+### Contrato técnico
+- `POST /api/atlas/chat` admite `sourceUrls: string[]` con máximo cuatro HTTPS públicos, más `images` con máximo tres imágenes; por compatibilidad también acepta `sourceUrl: string`.
+- `netlify/functions/lib/atlas-references.mjs` valida/deduplica URLs, reconoce proveedores y consulta enlaces en paralelo; solo el primer GitHub tiene lectura profunda de código.
+- Devuelve `references` con estado `read`, `metadata`, `limited` o `link_only`, con título/miniatura solo cuando estén disponibles. El contenido de código no se devuelve al navegador.
+- El frontend no debe clasificar el título/metadato/thumbnail como «vista visual confirmada».
+- `netlify/functions/lib/security.mjs` valida la URL pública de `og:image` sin descargarla desde Netlify; cuando se visualiza, el navegador usa carga diferida y sin referrer. Este recurso externo puede no estar disponible.
+- Los tests de `tests/atlas-references.test.mjs` y `src/lib/atlas-ai.test.ts` verifican proveedor, input unificado, privacidad, lectura limitada y prompts con múltiples enlaces.
+
+### Limitaciones explícitas
+No hay vista previa completa de publicaciones privadas, fotos detrás de inicio de sesión ni render automático de aplicaciones. No pedir al usuario datos de autenticación. El usuario puede adjuntar capturas para una referencia visual real.

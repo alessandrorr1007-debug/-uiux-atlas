@@ -5,7 +5,7 @@ import { buildPrompt } from './prompt'
 
 export type AtlasMode = 'create' | 'improve'
 export type AtlasImage = { id: string; name: string; dataUrl: string; palette: string[] }
-export type SiteInfo = { url: string; title: string; description: string; warning: string; headings?: string[]; excerpt?: string }
+export type SiteInfo = { url: string; title: string; description: string; warning: string; previewImage?: string; access?: 'limited' | 'metadata'; headings?: string[]; excerpt?: string }
 export type GitHubRepositoryInfo = {
   url: string
   name: string
@@ -22,8 +22,70 @@ export type GitHubRepositoryInfo = {
 export function isGitHubLink(value: string): boolean {
   try { return new URL(value.trim()).hostname.toLowerCase() === 'github.com' } catch { return false }
 }
+export type AtlasReferenceSummary = {
+  url: string
+  kind: 'github' | 'social' | 'web'
+  platform: string
+  status: 'read' | 'metadata' | 'limited' | 'link_only'
+  title: string
+  description: string
+  previewImage?: string
+  repository: GitHubRepositoryInfo | null
+  warning: string
+}
+export type AtlasLink = {
+  url: string
+  platform: string
+  kind: AtlasReferenceSummary['kind']
+  status: 'added' | 'reading' | AtlasReferenceSummary['status']
+  title?: string
+  description?: string
+  previewImage?: string
+  warning?: string
+  site?: SiteInfo | null
+  repository?: GitHubRepositoryInfo | null
+}
+export const MAX_ATLAS_LINKS=4
+export function atlasLinkPlatform(value: string): string {
+  let host=''
+  try {host=new URL(value).hostname.toLowerCase().replace(/^www\./,'')}catch{return 'Web'}
+  if(host==='github.com')return 'GitHub'
+  if(host==='instagram.com')return 'Instagram'
+  if(host==='linkedin.com'||host==='lnkd.in')return 'LinkedIn'
+  if(host==='pinterest.com'||host==='pin.it')return 'Pinterest'
+  if(host==='behance.net')return 'Behance'
+  if(host==='dribbble.com')return 'Dribbble'
+  if(host==='tiktok.com')return 'TikTok'
+  if(host==='facebook.com'||host==='fb.com')return 'Facebook'
+  return 'Web'
+}
+export function parseAtlasLink(input:string): AtlasLink {
+  let value=input.trim()
+  if(!value)throw new Error('Escribe o pega un enlace antes de agregarlo.')
+  if(!/^https?:\/\//i.test(value))value='https://'+value
+  if(value.length>700)throw new Error('El enlace es demasiado largo.')
+  let target:URL
+  try{target=new URL(value)}catch{throw new Error('Ingresa un enlace válido, por ejemplo https://ejemplo.com.')}
+  const host=target.hostname.toLowerCase()
+  if(target.protocol!=='https:'||target.username||target.password||
+    (target.port&&target.port!=='443')||host.indexOf('.')<0||host.includes('..')||
+    /^(?:localhost|\d+\.\d+\.\d+\.\d+)$/.test(host)||
+    /\.(?:local|internal|test|invalid|onion)$/.test(host)||
+    /(?:^|[?&])(?:token|key|password|secret|session|auth|code)=/i.test(target.search)) {
+    throw new Error('Solo se permiten enlaces públicos HTTPS sin contraseñas o tokens.')
+  }
+  target.hash=''
+  if(host==='github.com'){
+    const parts=target.pathname.split('/').filter(Boolean)
+    if(parts.length!==2||target.search)throw new Error('Para GitHub pega la raíz del repositorio: https://github.com/usuario/proyecto.')
+    target.pathname='/'+parts[0]+'/'+parts[1].replace(/\.git$/i,'')
+  }
+  const platform=atlasLinkPlatform(target.toString())
+  return {url:target.toString().replace(/\/$/,''),platform,kind:platform==='GitHub'?'github':platform==='Web'?'web':'social',status:'added'}
+}
+
 export type AtlasMessage = { role: 'user' | 'assistant'; content: string; attachments?: string[] }
-export type AtlasReply = { reply: string; patternIds: string[]; palette: string[]; prompt: string; site?: SiteInfo | null; repository?: GitHubRepositoryInfo | null; websiteNotice?: string }
+export type AtlasReply = { reply: string; patternIds: string[]; palette: string[]; prompt: string; site?: SiteInfo | null; repository?: GitHubRepositoryInfo | null; references?: AtlasReferenceSummary[]; websiteNotice?: string }
 
 const boosts: readonly [RegExp, readonly string[]][] = [
   [/polleria|restaurante|comida|delivery|hamburguesa|cafeteria/,['product-card','hero-section','cart-drawer','product-gallery','sticky-add-to-cart','checkout-steps']],
@@ -62,7 +124,8 @@ export function composeAtlasPrompt(
   tool: ToolId,
   colors: string[],
   site?: SiteInfo | null,
-  repository?: GitHubRepositoryInfo | null
+  repository?: GitHubRepositoryInfo | null,
+  references: readonly (AtlasReferenceSummary | AtlasLink)[] = []
 ): string {
   const chosen=components.filter(item=>selectedIds.includes(item.id)).slice(0,16)
   const items=chosen.length?chosen:suggestAtlasPatterns(description, [], 6)
@@ -80,6 +143,16 @@ export function composeAtlasPrompt(
       '\nArchivos de interfaz leídos: '+repository.files.map(f=>f.path).slice(0,8).join(', ')+
       '\nAl implementar, inspecciona estos archivos y confirma el resultado visual. Esta revisión fue estática y parcial; no se ejecutó ni renderizó el proyecto. No afirmes fallos que no has comprobado.'
     : ''
+  const additionalRefs=references.length
+    ? '\nREFERENCIAS PROPORCIONADAS (cada enlace puede estar solo agregado, leído parcialmente o restringido):\n'+
+      references.slice(0,MAX_ATLAS_LINKS).map(reference=>
+        '- '+reference.platform+': '+reference.url+' ['+reference.status+']'+
+        (reference.title?' — '+reference.title:'')+
+        (reference.repository?' — archivos de interfaz: '+reference.repository.files.map(file=>file.path).join(', '):'')+
+        (reference.warning?' — '+reference.warning:'')
+      ).join('\n')+
+      '\nLas imágenes adjuntas deben inspeccionarse directamente; una URL o miniatura no demuestra el aspecto visual real de una publicación.'
+    : ''
   const palette=colors.length?'\nPALETA SUGERIDA (extraída aproximadamente de las imágenes o seleccionada): '+colors.join(', ')+'. Mantén contraste suficiente.':''
   const componentText=buildPrompt(items,{
     project, audience:'usuarios de este proyecto', style:'profesional y coherente con las referencias proporcionadas',
@@ -87,7 +160,7 @@ export function composeAtlasPrompt(
     structure:'layout adaptable y jerarquía clara',hero:'portada acorde al sector',
     motion:'microinteracciones discretas',device:'Móvil y escritorio'
   })
-  return 'INSTRUCCIONES PARA '+tool.toUpperCase()+'\n'+intro+'\n\nSOLICITUD DEL USUARIO:\n'+project+siteText+repoText+palette+
+  return 'INSTRUCCIONES PARA '+tool.toUpperCase()+'\n'+intro+'\n\nSOLICITUD DEL USUARIO:\n'+project+(references.length?additionalRefs:siteText+repoText)+palette+
     '\n\n'+componentText+'\n\nAntes de inventar datos comerciales, precios, reseñas, disponibilidad o características que no se conocen, utiliza marcadores claros y solicita la información que falte. No asumas que una URL pública concede acceso al código.'
 }
 

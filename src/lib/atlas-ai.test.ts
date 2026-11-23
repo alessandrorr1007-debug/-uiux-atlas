@@ -3,6 +3,7 @@ import { components } from '../data/components'
 import {
   suggestAtlasPatterns, composeAtlasPrompt, isGitHubLink,
   describeAtlasRequestError, ATLAS_IMAGE_DATA_URL_LIMIT, prepareAtlasImage,
+  parseAtlasLink, atlasLinkPlatform, MAX_ATLAS_LINKS,
   type SiteInfo, type GitHubRepositoryInfo
 } from './atlas-ai'
 
@@ -99,5 +100,37 @@ describe('Atlas IA: asesor y generación sin API',()=>{
       Object.defineProperty(globalThis,'document',{configurable:true,value:oldDocument})
       Object.defineProperty(globalThis,'createImageBitmap',{configurable:true,value:oldBitmap})
     }
+  })
+  it('usa un solo input HTTPS para web, GitHub, Instagram y LinkedIn en ambos modos',()=>{
+    const values=[
+      'https://github.com/demo/proyecto',
+      'https://www.instagram.com/p/Cabc123/',
+      'https://www.linkedin.com/posts/demo-foo/',
+      'www.ejemplo.com/'
+    ]
+    const parsed=values.map(parseAtlasLink)
+    expect(parsed.map(ref=>ref.platform)).toEqual(['GitHub','Instagram','LinkedIn','Web'])
+    expect(parsed.map(ref=>ref.kind)).toEqual(['github','social','social','web'])
+    expect(parsed[3].url).toBe('https://www.ejemplo.com')
+    expect(MAX_ATLAS_LINKS).toBe(4)
+    expect(atlasLinkPlatform('https://www.behance.net/demo')).toBe('Behance')
+    expect(()=>parseAtlasLink('http://127.0.0.1/private')).toThrow()
+    expect(()=>parseAtlasLink('https://github.com/demo/proyecto/issues')).toThrow()
+  })
+  it('incluye varias referencias en prompts locales sin asegurar que vio la publicación',()=>{
+    const references=[
+      {...parseAtlasLink('https://www.instagram.com/p/abc'),status:'link_only' as const,
+        warning:'No se pudo ver la publicación, añade captura.'},
+      {...parseAtlasLink('https://www.linkedin.com/posts/demo'),status:'metadata' as const,
+        title:'Publicación pública',warning:'Metadatos solamente.'},
+      {...parseAtlasLink('https://example.com'),status:'metadata' as const,
+        title:'Página pública',warning:'HTML público.'}
+    ]
+    const prompt=composeAtlasPrompt('create','Diseña una web inspirada en estas referencias',
+      ['hero-section'],'Codex',[],null,null,references)
+    expect(prompt).toContain('instagram.com/p/abc')
+    expect(prompt).toContain('linkedin.com/posts/demo')
+    expect(prompt).toContain('example.com')
+    expect(prompt).toContain('una URL o miniatura no demuestra el aspecto visual')
   })
 })

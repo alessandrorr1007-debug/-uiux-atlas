@@ -64,3 +64,13 @@ Ver \`docs/ATLAS_IA_SETUP.md\`. Añadir \`GROQ_API_KEY\` en Netlify Functions y 
 - Preservar autenticación, pagos, lógica, rutas y APIs; separar evidencia de código, inferencia y mejora recomendada. Nunca pedir tokens/contraseñas en chat.
 - Límites: máximo 8 archivos, 1750 caracteres por extracto, límite global de contexto, tasa por IP, caché de cinco minutos. La lectura de GitHub puede agotar cuotas anónimas; `GITHUB_READ_TOKEN` es opcional y solo Functions.
 - Validaciones: `tests/atlas-github.test.mjs` cubre URLs maliciosas, repositorios privados, exclusión de secretos, detección de frameworks, endpoint y transferencia limitada a Groq simulado.
+
+## Referencias unificadas de Atlas IA (v0.4.6)
+
+- Mantener únicamente `create` y `improve`; **ambos** soportan el mismo apartado de **Enlaces** (hasta 4 URL HTTPS) y **Imágenes** (hasta 3 JPG/PNG/WebP). No separar los enlaces según GitHub, LinkedIn, Instagram o web.
+- `src/components/AtlasIA.tsx` permite pegar, agregar, consultar y quitar enlaces individuales. Los enlaces no se consultan automáticamente hasta pulsar consultar o enviar; metadatos parciales no equivalen a inspección visual.
+- `src/lib/atlas-ai.ts` contiene el parser de enlaces, clasificación y salida de prompts locales con múltiples referencias.
+- `netlify/functions/lib/atlas-references.mjs` aplica validación SSRF, límites, lectura concurrente de hasta cuatro enlaces y una sola lectura GitHub completa. `netlify/functions/atlas-chat.mjs` incorpora `sourceUrls` y conserva `sourceUrl` legado.
+- `netlify/functions/lib/security.mjs` puede recuperar metadatos públicos `og:image` sin efectuar una auditoría visual. Instagram/LinkedIn pueden bloquear la lectura; pedir captura como alternativa, no simular que se vio la publicación.
+- Nunca divulgar secretos ni ejecutar código remoto ni consumir APIs privadas sin autorización explícita.
+- Las pruebas cubren como mínimo: URLs de plataformas mixtas, cuatro enlaces, deduplicados, rechazos SSRF, acceso limitado social, miniaturas metadata, prompts que conservan todas las referencias y 406 patrones sin modificaciones.

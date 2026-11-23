@@ -1,7 +1,7 @@
-# UIUX Atlas v0.4.5 — Mejor estabilidad de Atlas IA multimodal
+# UIUX Atlas v0.4.6 — Enlaces e imágenes unificados en Atlas IA
 
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/alessandrorr1007-debug/-uiux-atlas/ci.yml?branch=main&label=Tests)](https://github.com/alessandrorr1007-debug/-uiux-atlas/actions)
-[![Version](https://img.shields.io/badge/versión-0.4.5-8b82ff)](./package.json)
+[![Version](https://img.shields.io/badge/versión-0.4.6-8b82ff)](./package.json)
 
 **Web pública:** https://uiux-atlas.netlify.app/
 
@@ -32,6 +32,20 @@ La plataforma incluye también un **paquete portable de Plugin con un Skill de d
 - Instalación local y pruebas documentadas en [`docs/ATLAS_PLUGIN.md`](docs/ATLAS_PLUGIN.md).
 
 **Estado:** paquete preparado en el repositorio; **no está instalado en ninguna cuenta ni publicado en el directorio público**. La instalación y eventual revisión/publicación se realizan después desde el cliente compatible. Esto no reemplaza la web ni activa Groq.
+
+## Referencias unificadas para Crear y Mejorar proyectos (v0.4.6)
+
+En **Atlas IA** existen solo dos flujos, **Crear proyecto** y **Mejorar proyecto**, y ambos muestran las **mismas dos zonas de referencias**:
+
+- **Enlaces (0–4):** un único campo para webs, GitHub, Instagram, LinkedIn, Pinterest, Behance, Dribbble y otras URLs públicas HTTPS. Pega una dirección y pulsa **Agregar**. Cada tarjeta permite abrir, consultar o quitar el enlace. No existen campos separados por proveedor.
+- **Imágenes (0–3):** pulsa **Agregar imágenes** para elegir capturas, logos, menús o diseños JPG/PNG/WebP desde el dispositivo. Aparecen miniaturas individuales y un botón para quitarlas. La compresión previa conserva el límite de carga de Netlify.
+- **Texto:** describe qué te inspira o qué quieres conservar/cambiar y pulsa **Enviar**. Puedes combinar varios enlaces y hasta tres imágenes en una misma consulta.
+- **Previsualización verificable:** cuando un sitio público proporciona metadatos Open Graph, Atlas muestra el título, descripción y una **miniatura pública opcional**; **no es una captura garantizada** ni un render de la página. El acceso a publicaciones de Instagram o LinkedIn puede estar restringido; cuando eso ocurra se indica claramente que debe añadirse una captura para analizar el diseño.
+- **GitHub:** se conserva la lectura segura de código público del primer repositorio de la consulta. Los demás repositorios (si se añaden) se incluyen solo como enlaces, para evitar tiempos de espera excesivos.
+- **Con Groq:** el asistente recibe los fragmentos públicos que pudieron leerse, las imágenes y los enlaces, distinguiendo evidencia e inferencia. **Sin Groq:** genera prompts locales con todos los enlaces y patrones, sin fingir análisis visual.
+- **Privacidad:** no se solicitan contraseñas/tokens de Instagram, LinkedIn o GitHub; no se eluden permisos ni se ejecuta el código remoto.
+
+Manual: [docs/ATLAS_IA_SETUP.md](docs/ATLAS_IA_SETUP.md). Notas de versión: [docs/RELEASE_0.4.6.md](docs/RELEASE_0.4.6.md).
 
 ## Respuesta estable con imágenes + GitHub (v0.4.5)
 
