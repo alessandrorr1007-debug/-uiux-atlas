@@ -24,10 +24,10 @@ const categoryIcons: Record<string, LucideIcon> = {
 }
 
 const accents = [
-  { id: 'violet', label: 'Violeta', value: '#8b82ff' },
-  { id: 'blue', label: 'Azul', value: '#4b98ff' },
-  { id: 'mint', label: 'Menta', value: '#32c9a3' },
-  { id: 'coral', label: 'Coral', value: '#ff8a76' }
+  { id: 'violet', label: 'Lavanda', light: '#695b96', dark: '#c0b2dd' },
+  { id: 'blue', label: 'Azul niebla', light: '#456f91', dark: '#a9c5df' },
+  { id: 'mint', label: 'Salvia', light: '#3d7269', dark: '#a5d3c4' },
+  { id: 'coral', label: 'Arcilla', light: '#925967', dark: '#ecc3bd' }
 ]
 
 const defaultConfig: PromptConfig = {
@@ -49,12 +49,13 @@ function CategoryIcon({ icon, size = 18 }: { icon: string; size?: number }) {
 }
 
 function App() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => loadJSON('theme', 'dark'))
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => loadJSON('theme', 'light'))
   const [accent, setAccent] = useState(() => loadJSON('accent', 'violet'))
   const [favorites, setFavorites] = useState<string[]>(() => loadJSON('favorites', []))
   const [promptIds, setPromptIds] = useState<string[]>(() => loadJSON('selection', []))
   const [category, setCategory] = useState<CategoryId | 'all'>('all')
   const [family, setFamily] = useState<string>('all')
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false)
   const [workspace, setWorkspace] = useState<'atlas' | WorkspaceView | 'ai'>('atlas')
   const [search, setSearch] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
@@ -70,7 +71,7 @@ function App() {
   useEffect(() => {
     const chosen = accents.find(item => item.id === accent) ?? accents[0]
     document.documentElement.dataset.theme = theme
-    document.documentElement.style.setProperty('--accent', chosen.value)
+    document.documentElement.style.setProperty('--accent', theme === 'dark' ? chosen.dark : chosen.light)
     saveJSON('theme', theme)
     saveJSON('accent', accent)
   }, [theme, accent])
@@ -80,14 +81,14 @@ function App() {
   useEffect(() => {
     const keyHandler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setSelected(null); setBuilderOpen(false); setSettingsOpen(false); setMobileNavOpen(false) }
-      if (event.key === '/' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement) && !(event.target instanceof HTMLSelectElement)) {
+      if (event.key === '/' && workspace === 'atlas' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement) && !(event.target instanceof HTMLSelectElement)) {
         event.preventDefault()
         searchRef.current?.focus()
       }
     }
     window.addEventListener('keydown', keyHandler)
     return () => window.removeEventListener('keydown', keyHandler)
-  }, [])
+  }, [workspace])
   useEffect(() => {
     if (!toast) return
     const timer = window.setTimeout(() => setToast(''), 2900)
@@ -145,6 +146,7 @@ function App() {
   const switchTheme = () => setTheme(current => current === 'dark' ? 'light' : 'dark')
   const openWorkspace = (value: WorkspaceView) => { setWorkspace(value); setMobileNavOpen(false) }
   const openAtlasAI = () => { setWorkspace('ai'); setMobileNavOpen(false) }
+  const openLibrary = () => { setOnlyFavorites(false); setSearch(''); selectCategory('all') }
   const useSectorPreset = (preset: SectorPreset) => {
     setPromptIds(preset.components.filter(id => components.some(item => item.id === id)))
     setConfig(previous => ({ ...previous, project: `${preset.kind === 'app' ? 'Aplicación' : 'Sitio web'} de ${preset.name}`, audience: preset.audience, structure: 'Layout adaptable', device: preset.kind === 'app' ? 'Móvil' : 'Móvil y escritorio' }))
@@ -154,32 +156,41 @@ function App() {
   const sidebar = (
     <>
       <div className="brand"><div className="brand__icon"><Layers3 size={22} strokeWidth={2.25}/></div><div><strong>UIUX <span>Atlas</span></strong><small>Design intelligence</small></div></div>
-      <div className="sidebar__section-title">EXPLORAR</div>
-      <nav className="sidebar__nav" aria-label="Categorías del catálogo">
-        <button className={category === 'all' && family === 'all' && !onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(false); selectCategory('all') }}><LayoutDashboard size={18}/><span>Todos los patrones</span><em>{components.length}</em></button>
-        {categories.map(item => (
-          <button key={item.id} className={category === item.id && !onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(false); selectCategory(item.id) }}><CategoryIcon icon={item.icon}/><span>{item.label}</span><em>{components.filter(c => c.category === item.id).length}</em></button>
-        ))}
-      </nav>
-      <div className="sidebar__section-title space-top">ASISTENTE INTELIGENTE</div>
-      <div className="sidebar__nav">
-        <button className={workspace==='ai'?'sidebar__link active':'sidebar__link'} onClick={openAtlasAI}>
-          <BrainCircuit size={18}/><span>Atlas IA</span><em>IA</em>
+      <div className="sidebar__section-title">EMPEZAR</div>
+      <nav className="sidebar__nav" aria-label="Accesos principales">
+        <button className={workspace==='ai'?'sidebar__link sidebar__link--primary active':'sidebar__link sidebar__link--primary'} onClick={openAtlasAI}>
+          <BrainCircuit size={18}/><span>Atlas IA</span><em>Asesor</em>
         </button>
+        <button className={workspace==='atlas' && category==='all' && family==='all' && !onlyFavorites?'sidebar__link active':'sidebar__link'} onClick={openLibrary}>
+          <LayoutDashboard size={18}/><span>Biblioteca completa</span><em>{components.length}</em>
+        </button>
+      </nav>
+      <div className="sidebar__section-title space-top">DICCIONARIO</div>
+      <div className="sidebar__nav">
+        <button className="sidebar__link sidebar__toggle" aria-expanded={categoriesExpanded} aria-controls="atlas-categories" onClick={()=>setCategoriesExpanded(open=>!open)}>
+          <Layers3 size={18}/><span>Explorar categorías</span><ChevronDown className={categoriesExpanded?'sidebar__chevron expanded':'sidebar__chevron'} size={16}/>
+        </button>
+        {categoriesExpanded && <nav className="sidebar__category-list" id="atlas-categories" aria-label="Categorías de patrones">
+          {categories.map(item => (
+            <button key={item.id} className={workspace==='atlas' && category===item.id && !onlyFavorites?'sidebar__link active':'sidebar__link'} onClick={()=>{setOnlyFavorites(false);selectCategory(item.id)}}>
+              <CategoryIcon icon={item.icon}/><span>{item.label}</span><em>{components.filter(c=>c.category===item.id).length}</em>
+            </button>
+          ))}
+        </nav>}
       </div>
-      <div className="sidebar__section-title space-top">ATLAS STUDIO</div>
+      <div className="sidebar__section-title space-top">HERRAMIENTAS DE DISEÑO</div>
       <div className="sidebar__nav">
         <button className={workspace==='lab'?'sidebar__link active':'sidebar__link'} onClick={()=>openWorkspace('lab')}><Sparkles size={18}/><span>Laboratorio interactivo</span><em>24</em></button>
         <button className={workspace==='templates'?'sidebar__link active':'sidebar__link'} onClick={()=>openWorkspace('templates')}><LayoutGrid size={18}/><span>Plantillas por rubro</span><em>20</em></button>
         <button className={workspace==='audit'?'sidebar__link active':'sidebar__link'} onClick={()=>openWorkspace('audit')}><CheckCircle2 size={18}/><span>Auditoría UI/UX</span><em>22</em></button>
         <button className={workspace==='photo'?'sidebar__link active':'sidebar__link'} onClick={()=>openWorkspace('photo')}><WandSparkles size={18}/><span>Estudio fotográfico</span><em>54</em></button>
       </div>
-      <div className="sidebar__section-title space-top">MI ESPACIO</div>
+      <div className="sidebar__section-title space-top">MIS RECURSOS</div>
       <div className="sidebar__nav">
-        <button className={onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(true); selectCategory('all') }}><Heart size={18}/><span>Favoritos</span><em>{favorites.length}</em></button>
+        <button className={workspace==='atlas' && onlyFavorites ? 'sidebar__link active' : 'sidebar__link'} onClick={() => { setOnlyFavorites(true); setSearch(''); selectCategory('all') }}><Heart size={18}/><span>Favoritos</span><em>{favorites.length}</em></button>
         <button className="sidebar__link" onClick={openBuilder}><WandSparkles size={18}/><span>Constructor de prompts</span>{promptIds.length > 0 && <em className="selected-number">{promptIds.length}</em>}</button>
       </div>
-      <div className="sidebar__bottom"><div className="sidebar__tip"><div className="sidebar__tip-icon"><Sparkles size={17}/></div><strong>Diseña con intención.</strong><p>Elige patrones y genera instrucciones precisas para tu IA.</p><button onClick={openBuilder}>Crear prompt <ArrowRight size={14}/></button></div><div className="sidebar__foot">ATLAS STUDIO <span>V 0.4.0</span></div></div>
+      <div className="sidebar__bottom"><div className="sidebar__tip"><div className="sidebar__tip-icon"><Sparkles size={17}/></div><strong>Diseña con intención.</strong><p>Elige patrones y genera instrucciones precisas para tu IA.</p><button onClick={openBuilder}>Crear prompt <ArrowRight size={14}/></button></div><div className="sidebar__foot">ATLAS STUDIO <span>V 0.4.1</span></div></div>
     </>
   )
 
@@ -189,20 +200,36 @@ function App() {
       {mobileNavOpen && <div className="mobile-backdrop" onClick={() => setMobileNavOpen(false)}><aside className="sidebar sidebar--mobile" onClick={event => event.stopPropagation()}><button className="mobile-close icon-button" onClick={() => setMobileNavOpen(false)} aria-label="Cerrar menú"><X size={20}/></button>{sidebar}</aside></div>}
       <main className="main">
         <header className="topbar">
-          <div className="topbar__left"><button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="topbar__location"><span>Workspace</span><span className="location-slash">/</span><strong>{workspace === 'atlas' ? 'Biblioteca de diseño' : workspace === 'ai' ? 'Atlas IA' : ({lab:'Laboratorio',templates:'Plantillas',audit:'Auditoría',photo:'Fotografía'} as Record<WorkspaceView,string>)[workspace]}</strong></span></div>
+          <div className="topbar__left"><button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMobileNavOpen(true)}><Menu size={20}/></button><span className="topbar__location"><span>UIUX Atlas</span><span className="location-slash">/</span><strong>{workspace === 'atlas' ? 'Biblioteca de diseño' : workspace === 'ai' ? 'Atlas IA' : ({lab:'Laboratorio',templates:'Plantillas',audit:'Auditoría',photo:'Fotografía'} as Record<WorkspaceView,string>)[workspace]}</strong></span></div>
           <div className="topbar__right"><button className="icon-button" aria-label="Cambiar tema" title="Alternar tema" onClick={switchTheme}>{theme === 'dark' ? <Sun size={19}/> : <Moon size={19}/>}</button><button className="icon-button" aria-label="Personalizar apariencia" title="Personalizar apariencia" onClick={() => setSettingsOpen(true)}><Settings2 size={19}/></button><a className="icon-button github-button" title="Ver repositorio en GitHub" aria-label="GitHub" href="https://github.com/alessandrorr1007-debug/-uiux-atlas" target="_blank" rel="noreferrer"><Github size={19}/></a><span className="topbar__avatar" aria-label="Atlas">A</span></div>
         </header>
         <div className="page">
           {workspace === 'atlas' ? <>
           <section className="hero">
-            <div className="hero__content"><div className="eyebrow"><span className="eyebrow__spark"><Sparkles size={13}/></span> TU SISTEMA DE DISEÑO EMPIEZA AQUÍ <span className="eyebrow__line"/></div><h1>Mejores interfaces.<br/><span>Mejores ideas.</span></h1><p>Explora el lenguaje del diseño digital. Descubre componentes, pruébalos en vivo y transforma tus ideas en prompts que la IA sí entiende.</p><div className="hero__actions"><button className="primary-button" onClick={openBuilder}><WandSparkles size={17}/> Crear un prompt <ArrowUpRight size={16}/></button><button className="secondary-button" onClick={() => { searchRef.current?.focus(); searchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}>Explorar biblioteca <ArrowRight size={16}/></button></div><div className="hero__stats"><span><strong>{components.length}</strong> patrones UI/UX</span><span className="stat-divider"/><span><strong>24</strong> familias nuevas</span><span className="stat-divider"/><span><strong>0</strong> tokens necesarios</span></div></div>
+            <div className="hero__content"><div className="eyebrow"><span className="eyebrow__spark"><Sparkles size={13}/></span> IDEAS CLARAS, INTERFACES MEJORES <span className="eyebrow__line"/></div><h1>Diseña con calma.<br/><span>Crea con intención.</span></h1><p>Un espacio para aprender UI/UX, elegir entre 406 patrones y convertir ideas en proyectos claros, sin complicaciones.</p><div className="hero__actions"><button className="primary-button" onClick={openAtlasAI}><BrainCircuit size={17}/> Explorar Atlas IA <ArrowUpRight size={16}/></button><button className="secondary-button" onClick={() => { searchRef.current?.focus(); searchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}>Ver los patrones <ArrowRight size={16}/></button></div><div className="hero__stats"><span><strong>{components.length}</strong> patrones UI/UX</span><span className="stat-divider"/><span><strong>24</strong> familias nuevas</span><span className="stat-divider"/><span><strong>24</strong> demos interactivas</span></div></div>
             <div className="hero__art" aria-hidden="true"><div className="hero__grid"/><div className="art-frame art-frame--back"><span className="art-dot"/><span className="art-line"/><div className="art-minigrid"><i/><i/><i/></div></div><div className="art-frame art-frame--front"><div className="art-window"><span/><span/><span/></div><div className="art-frame__title"><span className="art-diamond">✦</span> Design your next idea</div><div className="art-frame__graph"><span/><span/><span/><span/><span/><span/></div><div className="art-frame__cards"><div/><div/></div><div className="art-frame__bottom"><span/><span/></div></div><div className="hero__orbit hero__orbit--one"/><div className="hero__orbit hero__orbit--two"/></div>
           </section>
-
+          <section className="start-paths" aria-label="Accesos rápidos">
+            <button className="start-path" onClick={openLibrary}>
+              <span className="start-path__icon"><Layers3 size={19}/></span>
+              <span className="start-path__body"><strong>Descubre patrones</strong><small>Explora el diccionario y guarda tus favoritos.</small></span>
+              <ArrowUpRight size={16}/>
+            </button>
+            <button className="start-path" onClick={openAtlasAI}>
+              <span className="start-path__icon"><BrainCircuit size={19}/></span>
+              <span className="start-path__body"><strong>Habla con Atlas IA</strong><small>Planea una web nueva o mejora la que ya tienes.</small></span>
+              <ArrowUpRight size={16}/>
+            </button>
+            <button className="start-path" onClick={()=>openWorkspace('lab')}>
+              <span className="start-path__icon"><Sparkles size={19}/></span>
+              <span className="start-path__body"><strong>Prueba diseños</strong><small>Experimenta con ejemplos y herramientas.</small></span>
+              <ArrowUpRight size={16}/>
+            </button>
+          </section>
           <section className="library" aria-labelledby="library-heading">
-            <div className="section-heading"><div><div className="section-label"><span/> TU CAJA DE HERRAMIENTAS</div><h2 id="library-heading">{onlyFavorites ? 'Tus favoritos' : activeFamily?.label ?? activeCategory?.label ?? 'Biblioteca de componentes'} <span className="count-pill">{filtered.length}</span></h2><p>Patrones reales para crear experiencias digitales memorables.</p></div><button className="text-button section-action" onClick={openBuilder}>Generar con IA <ArrowUpRight size={17}/></button></div>
-            <div className="toolbar"><div className="search-box"><Search size={19}/><input ref={searchRef} type="search" value={search} onChange={event => changeSearch(event.target.value)} placeholder="Buscar un componente, patrón o concepto..." aria-label="Buscar componentes"/><kbd>/</kbd></div><button className={onlyFavorites ? 'toolbar-button active' : 'toolbar-button'} onClick={() => { setOnlyFavorites(value => !value); setCategory('all'); setVisibleCount(12) }}><Heart size={17} fill={onlyFavorites ? 'currentColor' : 'none'}/> Favoritos</button><div className="toolbar__label"><Filter size={16}/> {filtered.length} resultados</div></div>
-            <div className="category-chips" aria-label="Filtrar por categoría"><button className={category === 'all' && !onlyFavorites ? 'chip active' : 'chip'} onClick={() => { setOnlyFavorites(false); selectCategory('all') }}>Todos</button>{categories.map(cat => <button key={cat.id} className={category === cat.id && !onlyFavorites ? 'chip active' : 'chip'} onClick={() => { setOnlyFavorites(false); selectCategory(cat.id) }}>{cat.label}</button>)}</div>
+            <div className="section-heading"><div><div className="section-label"><span/> EXPLORAR EL DICCIONARIO</div><h2 id="library-heading">{onlyFavorites ? 'Tus favoritos' : activeFamily?.label ?? activeCategory?.label ?? 'Biblioteca de componentes'} <span className="count-pill">{filtered.length}</span></h2><p>Encuentra el componente adecuado por nombre, categoría o familia.</p></div><button className="text-button section-action" onClick={openBuilder}>Crear un prompt <ArrowUpRight size={17}/></button></div>
+            <div className="toolbar"><div className="search-box"><Search size={19}/><input ref={searchRef} type="search" value={search} onChange={event => changeSearch(event.target.value)} placeholder="Buscar un componente, patrón o concepto..." aria-label="Buscar componentes"/><kbd>/</kbd></div><button className={onlyFavorites ? 'toolbar-button active' : 'toolbar-button'} onClick={() => { setOnlyFavorites(value => !value); setCategory('all'); setFamily('all'); setVisibleCount(12) }}><Heart size={17} fill={onlyFavorites ? 'currentColor' : 'none'}/> Favoritos</button><div className="toolbar__label"><Filter size={16}/> {filtered.length} resultados</div></div>
+            <div className="category-chips" aria-label="Filtrar por categoría"><button className={category === 'all' && family === 'all' && !onlyFavorites ? 'chip active' : 'chip'} onClick={() => { setOnlyFavorites(false); selectCategory('all') }}>Todos</button>{categories.map(cat => <button key={cat.id} className={category === cat.id && !onlyFavorites ? 'chip active' : 'chip'} onClick={() => { setOnlyFavorites(false); selectCategory(cat.id) }}>{cat.label}</button>)}</div>
             <div className="family-toolbar">
               <div className="family-toolbar__intro"><strong>Explorar familias especializadas</strong><span>24 familias nuevas · 12 patrones por familia · 288 incorporados</span></div>
               <label className="family-toolbar__selector" htmlFor="family-filter">
@@ -231,11 +258,11 @@ function App() {
             ) : <div className="empty-state"><div><Search size={27}/></div><h3>No encontramos componentes</h3><p>Prueba con otra palabra o elimina los filtros para ver la biblioteca completa.</p><button className="secondary-button" onClick={() => { setSearch(''); setOnlyFavorites(false); selectCategory('all') }}>Limpiar filtros <ArrowRight size={15}/></button></div>}
           </section>
           </> : workspace === 'ai' ? <Suspense fallback={<div className="workspace-loading" role="status">Cargando Atlas IA…</div>}><AtlasIA/></Suspense> : <Suspense fallback={<div className="workspace-loading" role="status">Cargando estudio de diseño…</div>}><Workspace view={workspace} onUsePreset={useSectorPreset} onCopy={copyText}/></Suspense>}
-          <footer className="footer"><span><Layers3 size={16}/> UIUX Atlas · Hecho para crear mejor</span><span>Biblioteca educativa · v0.4.0</span></footer>
+          <footer className="footer"><span><Layers3 size={16}/> UIUX Atlas · Hecho para crear mejor</span><span>Biblioteca educativa · v0.4.1</span></footer>
         </div>
       </main>
 
-      <div className={promptIds.length ? 'builder-dock visible' : 'builder-dock'} aria-live="polite"><div className="builder-dock__symbol"><WandSparkles size={19}/></div><div><strong>{promptIds.length} {promptIds.length === 1 ? 'componente seleccionado' : 'componentes seleccionados'}</strong><small>Combínalos en un prompt profesional</small></div><button className="dock-clear" onClick={() => setPromptIds([])}>Limpiar</button><button className="primary-button" onClick={openBuilder}>Crear prompt <ArrowRight size={16}/></button></div>
+      <div className={workspace==='atlas' && promptIds.length ? 'builder-dock visible' : 'builder-dock'} aria-live="polite"><div className="builder-dock__symbol"><WandSparkles size={19}/></div><div><strong>{promptIds.length} {promptIds.length === 1 ? 'componente seleccionado' : 'componentes seleccionados'}</strong><small>Combínalos en un prompt profesional</small></div><button className="dock-clear" onClick={() => setPromptIds([])}>Limpiar</button><button className="primary-button" onClick={openBuilder}>Crear prompt <ArrowRight size={16}/></button></div>
 
       {selected && <div className="overlay" onMouseDown={event => { if (event.target === event.currentTarget) setSelected(null) }}><section className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div className="panel-header"><div><span className="section-label">EXPLORADOR DE PATRONES</span><h2 id="detail-title">{selected.name}</h2></div><button className="icon-button" onClick={() => setSelected(null)} aria-label="Cerrar detalle"><X size={21}/></button></div><div className="panel-scroll"><div className="detail-preview">{hasSpecificDemo(selected.id) ? <PatternDemo key={selected.id} id={selected.id} /> : <Preview key={selected.id} kind={selected.preview} name={selected.name}/>}</div><div className="detail-label">{hasSpecificDemo(selected.id) ? 'DEMOSTRACIÓN ESPECÍFICA' : 'DEMOSTRACIÓN REPRESENTATIVA'} · {selected.family ? expansionFamilies.find(c => c.id === selected.family)?.label : categories.find(c => c.id === selected.category)?.label}</div><div className="detail-section"><h3>¿Qué es?</h3><p>{selected.description}</p></div><div className="detail-section"><h3>¿Cuándo usarlo?</h3><p>{selected.useCase}</p></div><div className="detail-note"><CheckCircle2 size={19}/><span><strong>Buena práctica</strong>{selected.guidance}</span></div><div className="detail-section"><h3>Prompt para implementar</h3><textarea className="prompt-readonly" value={detailPrompt} readOnly aria-label="Prompt del componente" rows={11}/></div></div><div className="panel-footer"><button className="secondary-button" onClick={() => toggleFavorite(selected.id)}><Heart size={17} fill={favorites.includes(selected.id) ? 'currentColor' : 'none'}/>{favorites.includes(selected.id) ? 'Guardado' : 'Favorito'}</button><button className="secondary-button" onClick={() => { toggleSelection(selected.id); setToast(promptIds.includes(selected.id) ? 'Quitado del constructor' : 'Añadido al constructor') }}>{promptIds.includes(selected.id) ? <Check size={17}/> : <Plus size={17}/>} {promptIds.includes(selected.id) ? 'En el prompt' : 'Añadir'}</button><button className="primary-button" onClick={() => copyText(detailPrompt)}><Copy size={16}/> Copiar</button></div></section></div>}
 
@@ -246,7 +273,7 @@ function App() {
 <label className="field-label" htmlFor="device">Dispositivo</label><select id="device" className="field" value={config.device ?? 'Móvil y escritorio'} onChange={event => setConfig(v => ({...v,device:event.target.value}))}><option>Móvil y escritorio</option><option>Móvil</option><option>Escritorio</option></select>
 <label className="check-field"><input type="checkbox" checked={config.keepLogic} onChange={event => setConfig(v => ({ ...v, keepLogic: event.target.checked }))}/><span>Conservar lógica y funcionalidades existentes</span></label><div className="selected-list-heading"><strong>Componentes elegidos</strong><span>{chosenComponents.length} seleccionados</span></div><div className="selected-list">{chosenComponents.length ? chosenComponents.map(item => <button key={item.id} className="selected-chip" onClick={() => toggleSelection(item.id)} title="Quitar del prompt">{item.name} <X size={12}/></button>) : <div className="selected-empty">Selecciona componentes desde la biblioteca usando el botón + de cada tarjeta.</div>}</div><button className="text-button" onClick={() => { setBuilderOpen(false); setTimeout(() => searchRef.current?.focus(), 0) }}><Plus size={16}/> Añadir componentes</button></div><div className="builder-output"><div className="builder-output__top"><span><Code2 size={17}/> PROMPT GENERADO</span><span>{prompt.length} caracteres</span></div><textarea className="builder-textarea" readOnly value={prompt || 'Selecciona al menos un componente para generar un prompt personalizado.\n\nPuedes combinar patrones de distintas categorías y adaptar el resultado a tu proyecto.'} aria-label="Texto de prompt generado"/><div className="builder-output__bottom"><span><CheckCircle2 size={16}/> Generación local · Sin tokens</span><button className="primary-button" disabled={!prompt} onClick={() => copyText(prompt)}><Clipboard size={16}/> Copiar prompt</button></div></div></div></section></div>}
 
-      {settingsOpen && <div className="overlay" onMouseDown={event => { if (event.target === event.currentTarget) setSettingsOpen(false) }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="panel-header"><div><span className="section-label">PERSONALIZACIÓN</span><h2 id="settings-title">Tu espacio, tu estilo</h2></div><button className="icon-button" onClick={() => setSettingsOpen(false)} aria-label="Cerrar ajustes"><X size={20}/></button></div><div className="settings-content"><label className="field-label">Apariencia</label><div className="theme-options"><button className={theme === 'dark' ? 'theme-option active' : 'theme-option'} onClick={() => setTheme('dark')}><Moon size={21}/> Oscuro</button><button className={theme === 'light' ? 'theme-option active' : 'theme-option'} onClick={() => setTheme('light')}><Sun size={21}/> Claro</button></div><label className="field-label">Color de acento</label><div className="accent-picker">{accents.map(item => <button key={item.id} className={accent === item.id ? 'accent-option active' : 'accent-option'} onClick={() => setAccent(item.id)} title={item.label} aria-label={`Color ${item.label}`} aria-pressed={accent === item.id} style={{'--swatch': item.value} as CSSProperties}>{accent === item.id && <Check size={17}/>}</button>)}</div><p className="settings-hint">El tema, tus favoritos y tu selección de patrones se guardan únicamente en este navegador.</p></div></section></div>}
+      {settingsOpen && <div className="overlay" onMouseDown={event => { if (event.target === event.currentTarget) setSettingsOpen(false) }}><section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div className="panel-header"><div><span className="section-label">PERSONALIZACIÓN</span><h2 id="settings-title">Tu espacio, tu estilo</h2></div><button className="icon-button" onClick={() => setSettingsOpen(false)} aria-label="Cerrar ajustes"><X size={20}/></button></div><div className="settings-content"><label className="field-label">Apariencia</label><div className="theme-options"><button className={theme === 'dark' ? 'theme-option active' : 'theme-option'} onClick={() => setTheme('dark')}><Moon size={21}/> Noche suave</button><button className={theme === 'light' ? 'theme-option active' : 'theme-option'} onClick={() => setTheme('light')}><Sun size={21}/> Niebla suave</button></div><label className="field-label">Color de acento</label><div className="accent-picker">{accents.map(item => <button key={item.id} className={accent === item.id ? 'accent-option active' : 'accent-option'} onClick={() => setAccent(item.id)} title={item.label} aria-label={`Color ${item.label}`} aria-pressed={accent === item.id} style={{'--swatch': theme === 'dark' ? item.dark : item.light} as CSSProperties}>{accent === item.id && <Check size={17}/>}</button>)}</div><p className="settings-hint">El tema, tus favoritos y tu selección de patrones se guardan únicamente en este navegador.</p></div></section></div>}
 
       {toast && <div role="status" className="toast-message"><CheckCircle2 size={18}/>{toast}<button onClick={() => setToast('')} aria-label="Cerrar aviso"><X size={15}/></button></div>}
     </div>

@@ -4,6 +4,7 @@ import App from './App'
 import './styles.css'
 import './studio.css'
 import './atlas-ai.css'
+import './soft-theme.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

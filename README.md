@@ -1,7 +1,7 @@
-# UIUX Atlas v0.4.0 — Atlas IA lista para conectar
+# UIUX Atlas v0.4.1 — Diseño Soft Balance y Atlas IA lista para conectar
 
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/alessandrorr1007-debug/-uiux-atlas/ci.yml?branch=main&label=Tests)](https://github.com/alessandrorr1007-debug/-uiux-atlas/actions)
-[![Version](https://img.shields.io/badge/versión-0.4.0-8b82ff)](./package.json)
+[![Version](https://img.shields.io/badge/versión-0.4.1-8b82ff)](./package.json)
 
 **Web pública:** https://uiux-atlas.netlify.app/
 
@@ -11,6 +11,10 @@ UIUX Atlas es un diccionario de **406 patrones UI/UX**, un laboratorio interacti
 2. **Mejorar proyecto:** comparte una web pública, capturas e instrucciones; recibe recomendaciones para mejorar el diseño sin romper lógica, rutas, autenticación o integraciones.
 
 En ambos modos hay conversación, recomendaciones conectadas con los 406 patrones y generación de un prompt final para **Codex, Google AI Studio o Antigravity**.
+
+## Diseño Soft Balance (v0.4.1)
+
+Interfaz renovada con colores suaves, modo «Niebla suave» por defecto y «Noche suave», navegación simplificada por objetivos, categorías expandibles y accesos rápidos a la biblioteca, Atlas IA y el laboratorio. Se conservan los 406 patrones y todas las funciones de la versión anterior. [Notas de actualización](docs/RELEASE_0.4.1.md).
 
 ## Activación de Atlas IA
 
